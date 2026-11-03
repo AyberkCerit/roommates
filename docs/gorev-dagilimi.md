@@ -206,7 +206,7 @@ Aşama 3  D: G16a (README) + C: G16b (Postman) ◄── (G15 birleşti)
 
 Ayrıntı `CONTRIBUTING.md`'de.
 - **Dal ve commit:** Dal adı `feat/<harf>-<konu>`, ör. `feat/b-rooms`. Commit mesajları İngilizce (`feat(room): ...`).
-- **PR:** Her görev ayrı bir PR. Açıklamada karşılanan M maddeleri ve `check.sh` çıktısı yer alır. İnceleyici §2'deki tabloya göre atanır.
+- **PR:** Her görev ayrı bir PR. Açıklamada karşılanan M maddeleri ve `scripts/checks/g<N>.sh` çıktısı yer alır. İnceleyici §2'deki tabloya göre atanır.
 - **Dosya sahipliği:** Başkasının paketindeki dosya değiştirilmez. Gerekirse sahibinden istenir. En çok karışabilecek dosyalar ve sahipleri:
   - `SecurityConfig` → A
   - `GlobalExceptionHandler` → C
