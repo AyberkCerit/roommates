@@ -19,10 +19,10 @@
 | 2 | Görev 9 | Görev 8, Görev 10, Görev 15 | Görev 11, Görev 12 | Görev 13, Görev 14 |
 | 3 | Görev 17 | Görev 17 | Görev 16b (Postman), Görev 17 | Görev 16a (README), Görev 17 |
 
-Görev 1 ve Görev 2 Aşama 0'dır (Ayberk + Claude; PR'ını bir ekip üyesi inceler). Görevlerin bağımlılıkları her görevin **Bağımlılık** satırındadır. Özet:
+Görev 1 ve Görev 2 Aşama 0'dır (Ayberk + Claude). Görevlerin bağımlılıkları her görevin **Bağımlılık** satırındadır. Özet:
 - G3, G5 ve G6 yalnız G2'ye bağlı. G6 ilk gün birleşir, çünkü G7'nin Actuator kontrolleri ona dayanıyor.
 - G4, G3'ün `User`'ına bağlı. G7; G3, G5 ve G6'ya bağlı.
-- Aşama 2'de G8 (oda CRUD) ilk birleşen olmalı, çünkü diğer CRUD'lar onun kalıbını kopyalar. G9, G10, G12 ve G14 ondan sonra PR açar.
+- Aşama 2'de G8 (oda CRUD) ilk birleşen olmalı, çünkü diğer CRUD'lar onun kalıbını kopyalar. G9, G10, G12 ve G14 ondan sonra `main`'e push edilir.
 - G11 yalnız G4'e, G13 yalnız G1'e bağlı. İkisi de Aşama 1 bitmeden yapılabilir.
 - G15 en son birleşen koddur: G10, G12 ve G14'e bağlı.
 
@@ -61,7 +61,7 @@ Bu kurallar her görevin gereksinimlerine örtük olarak dahildir:
 - **JSON:** Jackson 3. Databind tarafı `tools.jackson.databind.*`, anotasyonlar `com.fasterxml.jackson.annotation.*`. `com.fasterxml.jackson.databind` import edilmez.
 - **Hata mesajları:** Türkçe. 404 mesajı `"<Kaynak> bulunamadı: id=<id>"`. PATCH'te id mesajı tam olarak `"Birincil anahtar (id) PATCH ile değiştirilemez"`.
 - `spring.jpa.hibernate.ddl-auto=update`. `create` ve `create-drop` yasak.
-- **Commit mesajları** İngilizce Conventional Commits: `feat(room): ...`, `fix(security): ...`. Dal adları `feat/<kişi>-<konu>`. Her PR'ı başka bir üye onaylar ve PR açıklamasında karşıladığı M maddelerini listeler.
+- **Commit mesajları** İngilizce Conventional Commits: `feat(room): ...`, `fix(security): ...`. PR ve inceleme yok: herkes kendi modülünü doğrudan `main`'e push eder (`git pull --rebase` önce, `--force` yasak). Commit gövdesinde karşılanan M maddeleri listelenir. "Birleşti" = `main`'e push edildi.
 - **Doğrulama yöntemi:** Vizede test kodu kapsam dışı (tasarım §2). Her görev, çalışan uygulamaya karşı `scripts/check.sh` ile bekleme kontrolleri yapar. Bu kontroller aynı zamanda Postman isteklerinin taslağıdır.
 - **Kontrol kuralları:**
   - Her görevin kontrol bloğu `scripts/checks/g<N>.sh` dosyasına kaydedilir ve `bash -e scripts/checks/g<N>.sh` ile çalıştırılır. `-e` sayesinde ilk FAIL'de durur; boş id ile devam edip zincirleme hata üretmez. Dosyalar repoya girer, Görev 17'de hepsi sırayla yeniden çalıştırılır.
@@ -210,13 +210,13 @@ git init -b main && git add -A && git commit -m "chore: scaffold Spring Boot 4.1
 - [ ] **Adım 2: `CONTRIBUTING.md`'yi yaz**
 
 İçerik:
-- Dal adları ve commit kuralı (Genel kısıtlar'daki gibi).
-- PR kontrol listesi:
+- Commit ve push kuralı (Genel kısıtlar'daki gibi).
+- Push kontrol listesi:
   - `@Autowired` yok, Spring Data yok, controller'da repository yok
   - `@Transactional` importu doğru
   - Entity'de her alanda `@Column`
   - Karşılanan M maddeleri yazıldı
-  - `scripts/check.sh` kontrolleri PR açıklamasına yapıştırıldı
+  - `scripts/checks/g<N>.sh` tamamen PASS
 - Paket sahipliği tablosu (tasarım §10.1).
 - "Başkasının paketine dokunmadan önce sor" kuralı.
 
@@ -237,7 +237,7 @@ git add -A && git commit -m "docs: add contributing guide, DB setup script and m
 Bu adım dışarıya dönük olduğu için Ayberk'ten açık onay istenir:
 - Depo özel açılır ve gönderilir: `gh repo create roommates --private --source . --push`.
 - 3 ekip üyesi davet edilir: `gh api repos/{owner}/roommates/collaborators/<kullanici> -X PUT`.
-- `main` dalı korunur: PR zorunlu, 1 onay.
+- `main` korunmaz: ekip kararıyla herkes doğrudan push eder (2026-11-03).
 
 ---
 
@@ -352,7 +352,7 @@ git add -A src/main/java/com/roommates/room && git commit -m "feat(room): add Ro
 
 - [ ] **Adım 1: Kontrolleri hazırla (şu an başarısız olacaklar)**
 
-Bu kontroller, Görev 8'deki ilk controller birleşene kadar gerçek uç noktalara karşı çalıştırılamaz. Görevin içinde, yalnız bu PR'da duran ve birleşmeden önce silinen geçici bir `@RestController` (`common/error/ErrorProbeController`) kullanılır. Uçları:
+Bu kontroller, Görev 8'deki ilk controller birleşene kadar gerçek uç noktalara karşı çalıştırılamaz. Görevin içinde, hiç commit edilmeyen ve push'tan önce silinen geçici bir `@RestController` (`common/error/ErrorProbeController`) kullanılır. Uçları:
 - `GET /api/_probe/notfound`: `ResourceNotFoundException("Oda", 42L)` fırlatır.
 - `POST /api/_probe/valid`: `@Valid` bir record alır (`@NotBlank String name`).
 - `GET /api/_probe/num/{n}`: `Long` path değişkeni alır.
@@ -560,7 +560,7 @@ git add -A && git commit -m "feat(security): add HTTP Basic with Argon2id, DB-ba
 
 ### Görev 8 (Kişi B): Oda CRUD — referans uygulama
 
-**Bağımlılık:** Görev 4, 5 ve 7 birleşmiş olmalı. Bu görev birleşmeden diğer CRUD görevleri PR açmaz. Kod yazmaya başlayabilirler, ama kalıbı bundan alırlar.
+**Bağımlılık:** Görev 4, 5 ve 7 birleşmiş olmalı. Bu görev `main`'e gelmeden diğer CRUD görevleri push edilmez. Kod yazmaya başlayabilirler, ama kalıbı bundan alırlar.
 
 **Dosyalar:**
 - Oluştur (`room/dto/` altında): `RoomCreateRequest.java`, `RoomUpdateRequest.java`, `RoomPatchRequest.java`, `RoomResponse.java`

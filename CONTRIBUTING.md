@@ -2,26 +2,31 @@
 
 Bu belge ekip üyeleri ve yapay zekâ asistanları içindir. Asistanınıza [docs/yapay-zeka-brifingi.md](docs/yapay-zeka-brifingi.md) dosyasını yapıştırın. Ayrıntılar için [tasarım](docs/superpowers/specs/2026-11-03-roommates-vize-design.md) (§10) ve [görev dağılımı](docs/gorev-dagilimi.md) belgelerine bakın.
 
-## Dallar ve commit'ler
+## Çalışma akışı
 
-- Dal adı: `feat/<harf>-<konu>` (ör. `feat/a-security`, `feat/b-rooms`, `feat/c-study`, `feat/d-interview`).
+- Herkes doğrudan `main`'e push eder. PR ve onay yok; herkes kendi modülünden sorumludur.
+- Herkes yalnız kendi paketlerinde çalışır (aşağıdaki tablo). Başkasının dosyası gerekiyorsa sahibine sorulur.
 - Commit mesajları İngilizce, Conventional Commits: `feat(room): add JPQL filter by type`, `fix(security): return JSON 401`.
-- `main` korumalıdır: doğrudan push yok, PR ve 1 onay gerekir.
+- Belgelerde "birleşti" ya da "birleşmiş olmalı", görevin `main`'e push edilmiş olması demektir. Bağımlılıklar geçerlidir: ör. diğer CRUD'lar G8 `main`'e gelmeden push edilmez.
 
-## Pull request kuralları
+### Push etmeden önce
 
-- Bir PR, bir görev.
-- İnceleyen döngüsü: C, A'yı; A, B'yi; B, D'yi; D, C'yi inceler. Kendi PR'ınızı onaylamayın.
-- PR açıklamasında karşıladığı M maddeleri listelenir.
-- PR açıklamasına `scripts/checks/g<N>.sh` çıktısı yapıştırılır.
+```bash
+git pull --rebase          # önce başkalarının değişikliklerini al
+./mvnw -q package          # derleme kırılmamalı
+git push
+```
 
-### PR kontrol listesi
+- Push reddedilirse (`non-fast-forward`) yeniden `git pull --rebase` yapıp tekrar push edin. `git push --force` **kullanılmaz**: başkasının işini siler.
+- Rebase'de çakışma çıkarsa ve dosya sizin değilse, kendi değişikliğinizi o dosyadan geri alıp sahibine haber verin.
+
+### Push kontrol listesi
 
 - [ ] `@Autowired` yok, Spring Data yok, controller'da repository yok
 - [ ] `@Transactional` importu `org.springframework.transaction.annotation.Transactional`
 - [ ] Entity'de her alanda `@Column`
-- [ ] Karşılanan M maddeleri yazıldı
-- [ ] `scripts/checks/g<N>.sh` çıktısı PR açıklamasına yapıştırıldı
+- [ ] Commit mesajında karşılanan M maddeleri yazıldı (ör. gövdede `M18, M19`)
+- [ ] Uygulama açılıyor ve `bash -e scripts/checks/g<N>.sh` tamamen PASS
 
 Yasaklı desen taraması (çıktı boş olmalı):
 
@@ -31,12 +36,12 @@ grep -rnE "@Autowired|JpaRepository|CrudRepository|PersistenceContext|jakarta.tr
 
 ## Paket sahipliği
 
-| Harf | Kişi | Modül | Paketler | İnceleyen |
-|---|---|---|---|---|
-| A | Şevval | Kullanıcılar ve güvenlik | `user/`, `common/security/` | C (Adem) |
-| B | Pınar | Odalar ve video kuyruğu | `room/`, `video/` | A (Şevval) |
-| C | Adem | Çalışma oturumları ve hata yönetimi | `study/`, `common/error/`, `postman/` (birleşik koleksiyon) | D (Ayberk) |
-| D | Ayberk | Mülakat oturumları, yapılandırma, belgeleme | `interview/`, `common/config/OpenApiConfig`, `README.md` | B (Pınar) |
+| Harf | Kişi | Modül | Paketler |
+|---|---|---|---|
+| A | Şevval | Kullanıcılar ve güvenlik | `user/`, `common/security/` |
+| B | Pınar | Odalar ve video kuyruğu | `room/`, `video/` |
+| C | Adem | Çalışma oturumları ve hata yönetimi | `study/`, `common/error/`, `postman/` (birleşik koleksiyon) |
+| D | Ayberk | Mülakat oturumları, yapılandırma, belgeleme | `interview/`, `common/config/OpenApiConfig`, `README.md` |
 
 ### Başkasının paketine dokunmadan önce sahibine sor
 

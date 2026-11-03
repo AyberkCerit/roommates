@@ -24,7 +24,7 @@ Bu belgeler bağlayıcıdır. Kodla ilgili her soruda önce bunlara bak:
 1. `docs/superpowers/specs/2026-11-03-roommates-vize-design.md`: **Tasarım.** Neyin neden böyle olduğu, veri modeli, REST sözleşmesi, hata modeli, güvenlik matrisi.
 2. `docs/superpowers/plans/2026-11-03-roommates-vize.md`: **Uygulama planı.** 17 görev; her görevde dosyalar, sınıf ve metot imzaları, kontrol komutları ve commit adımı var.
 3. `docs/gorev-dagilimi.md`: **Görev dağılımı.** Kim hangi görevi yapıyor, kimi bekliyor, kime ne teslim ediyor.
-4. `CONTRIBUTING.md`: Dal, commit ve PR kuralları.
+4. `CONTRIBUTING.md`: Commit ve push kuralları (PR yok, herkes doğrudan `main`'e push eder).
 
 Plandaki "Görev N" görev numarasıdır, "§N" tasarım belgesinin bölümüdür, "MN" kontrol listesinin N'inci maddesidir.
 
@@ -102,8 +102,9 @@ Belgeler ile kendi bilgin çelişirse **belgeler kazanır**. Belgeler bir konuda
    - Boş veritabanında tek başına yeşil çalışır.
 6. **Commit:**
    - Mesajlar **İngilizce** Conventional Commits: `feat(study): add study sessions CRUD`. Yeni dosyalar için `git add -A` kullan; `commit -am` yeni dosyaları almaz.
-   - Dal adı `feat/<harf>-<konu>`, ör. `feat/c-study`.
-   - PR açıklamasında karşılanan M maddeleri ve kontrol çıktısı yer alır.
+   - PR ve inceleme yok; doğrudan `main`'e push edilir. Commit gövdesinde karşılanan M maddeleri yazılır.
+   - Push'tan önce: `git pull --rebase`, `./mvnw -q package`, uygulama açıkken `bash -e scripts/checks/g<N>.sh` PASS. `git push --force` asla kullanılmaz.
+   - Yalnız kullanıcının kendi paketlerindeki dosyalar değiştirilir.
 7. **Bitirmeden önce:** Görevin sonunda şu tarama boş dönmeli:
    ```bash
    grep -rnE "@Autowired|JpaRepository|CrudRepository|PersistenceContext|jakarta.transaction.Transactional|com.fasterxml.jackson.databind" src/main/java
@@ -124,14 +125,14 @@ Bu bir ders projesi. Kullanıcın vize sunumunda **kendi kodunu hocaya anlatacak
 
 ### Gizli bilgiler
 
-- `.env.local` dosyası git'e girmez. Veritabanı parolasını hiçbir dosyaya, commit'e ya da PR'a yazma.
+- `.env.local` dosyası git'e girmez. Veritabanı parolasını hiçbir dosyaya ya da commit'e yazma.
 - Seed kullanıcı parolaları yerel test verisidir ve README'de yazılıdır. Bunlar dışında gerçek parola kullanma.
 
 ---
 
 ## Kişi A — Kullanıcılar ve güvenlik (yalnız A yapıştırır)
 
-**Senin görevlerin:** Görev 3 → Görev 7 → Görev 9. Paketlerin: `user/`, `common/security/`. Karşıladığın maddeler: M14, M31–M35. PR'larını **C** inceler.
+**Senin görevlerin:** Görev 3 → Görev 7 → Görev 9. Paketlerin: `user/`, `common/security/`. Karşıladığın maddeler: M14, M31–M35.
 
 **Kritik ayrıntılar:**
 - **Rol yüklemesi (G7):** `DatabaseUserDetailsService` kullanıcıyı `findByUsernameWithRoles` ile, JPQL `LEFT JOIN FETCH u.roles` kullanarak yükler. Roller LAZY ve güvenlik filtresinde transaction yok. `JOIN FETCH` olmazsa her girişte `LazyInitializationException` olur.
@@ -168,14 +169,14 @@ Asistan, sana bu akışın her adımını anlatabilecek hâle getirmeli.
 
 ## Kişi B — Odalar ve video kuyruğu (yalnız B yapıştırır)
 
-**Senin görevlerin:** Görev 4 → Görev 8 → Görev 10 → Görev 15. Paketlerin: `room/`, `video/`. Karşıladığın maddeler: M18–M26 (referans) ve M20 (çok tablolu transaction). PR'larını **A** inceler.
+**Senin görevlerin:** Görev 4 → Görev 8 → Görev 10 → Görev 15. Paketlerin: `room/`, `video/`. Karşıladığın maddeler: M18–M26 (referans) ve M20 (çok tablolu transaction).
 
 **Kritik ayrıntılar:**
 - **Referans uygulama (G8):** Görev 8 herkesin kopyalayacağı referans uygulama.
   - Kod temiz, tutarlı ve yorumlu olmalı.
   - `RoomRepositoryImpl`'de her metodun üstünde hangi `EntityManager` metodunu neden kullandığını anlatan tek satırlık yorum olsun.
   - Controller'da her metot için `@Operation` ve hata kodları için `ErrorResponse` şemalı `@ApiResponse` bulunsun.
-  - PR açılınca ekibe "kalıp hazır" denecek.
+  - `main`'e push edilince ekibe "kalıp hazır" denecek.
 - **Oda sahibi:** Sahip gövdeden değil, `Authentication.getName()` → `UserRepository.findByUsername` ile gelir.
 - **PATCH sırası:** Önce kayıt bulunur (yoksa 404), sonra gövdedeki `id` kontrol edilir (varsa 400 `"Birincil anahtar (id) PATCH ile değiştirilemez"`), sonra null olmayan alanlar uygulanır.
 - **Video sırası (G10):** Boşluksuz sıra kullanılır; algoritma plandaki gibi. Kaydırma JPQL `UPDATE` (`shiftPositions`) ile yapılır. Bundan sonra persistence context bayatlar: yalnız taşınan videoyu değiştir ve listeyi yeniden sorgula.
@@ -199,7 +200,7 @@ Asistan, sana bu akışın her adımını anlatabilecek hâle getirmeli.
 
 ## Kişi C — Çalışma oturumları, hata yönetimi ve Postman (yalnız C yapıştırır)
 
-**Senin görevlerin:** Görev 5 → Görev 11 → Görev 12 → Görev 16b. Paketlerin: `common/error/`, `study/`, `postman/` (birleşik koleksiyon). Karşıladığın maddeler: M10, M12, M28–M30, M38. PR'larını **D** inceler. Sunumun açılışını da sen yapacaksın: proje tanıtımı, M1, M2, M15–M17.
+**Senin görevlerin:** Görev 5 → Görev 11 → Görev 12 → Görev 16b. Paketlerin: `common/error/`, `study/`, `postman/` (birleşik koleksiyon). Karşıladığın maddeler: M10, M12, M28–M30, M38. Sunumun açılışını da sen yapacaksın: proje tanıtımı, M1, M2, M15–M17.
 
 **Kritik ayrıntılar:**
 - **Herkes G5'i bekliyor:** Görev 5 kritik yolda; A'nın güvenlik işi buna bağlı. İlk iş bitir.
@@ -232,7 +233,7 @@ Asistan, sana bu akışın her adımını anlatabilecek hâle getirmeli.
 
 ## Kişi D — Mülakat oturumları, yapılandırma ve belgeleme (yalnız D yapıştırır)
 
-**Senin görevlerin:** Görev 6 → Görev 13 → Görev 14 → Görev 16a. Paketlerin: `interview/`, `common/config/OpenApiConfig`, `README.md`; ayrıca `application.properties`'teki actuator ve `info` satırları. Karşıladığın maddeler: M8, M9, M11, M13, M36, M37. PR'larını **B** inceler.
+**Senin görevlerin:** Görev 6 → Görev 13 → Görev 14 → Görev 16a. Paketlerin: `interview/`, `common/config/OpenApiConfig`, `README.md`; ayrıca `application.properties`'teki actuator ve `info` satırları. Karşıladığın maddeler: M8, M9, M11, M13, M36, M37.
 
 **Kritik ayrıntılar:**
 - **G6'yı ilk gün bitir:** A'nın güvenlik kontrolleri `/actuator/info` ve `/actuator/metrics`'in açık olmasına bağlı.

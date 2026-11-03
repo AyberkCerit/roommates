@@ -21,14 +21,9 @@ Bu belge kimin neyi yapacağını, neyi kimden beklediğini, neyi kime teslim et
 | Sahip olduğu paketler | `user/`, `common/security/` | `room/`, `video/` | `study/`, `common/error/`, `postman/` (birleşik koleksiyon) | `interview/`, `common/config/OpenApiConfig`, `README.md` |
 | Kontrol listesi maddeleri | M14, M31, M32, M33, M34, M35 | M18, M19, M20 (referans), M21–M26 (referans) | M10, M12, M28, M29, M30, M38 | M8, M9, M11, M13, M36, M37 |
 | Uç noktaları | `/api/users` | `/api/rooms`, `/api/rooms/{roomId}/videos` | `/api/study-sessions` | `/api/interview-sessions` |
-| PR'larını inceleyen | C | A | D | B |
 | Tahmini iş | ~14 saat | ~16 saat | ~14 saat | ~13 saat |
 
-İnceleme zinciri bir döngü: C → A → B → D → C. İnceleyici, incelediği kişinin işine en çok dokunan kişi:
-- **C, A'yı inceler:** A'nın 401/403 cevapları C'nin hata modelini kullanıyor.
-- **A, B'yi inceler:** B'nin oda sahibi, A'nın giriş yapan kullanıcısı.
-- **B, D'yi inceler:** D, B'nin referans CRUD kalıbını kopyalıyor.
-- **D, C'yi inceler:** Hata cevapları Swagger'da D'nin belgelediği şemayla aynı olmalı.
+**İnceleme yok:** Herkes kendi modülünü yapıp doğrudan `main`'e push eder; PR ve onay yok. Bu belgede "birleşti", görevin `main`'e push edildiği anlamına gelir. Push etmeden önce kendi `scripts/checks/g<N>.sh` kontrolünüz PASS olmalı (ayrıntı `CONTRIBUTING.md`).
 
 **Herkesin ortak sorumluluğu:** M1–M7 ve M15–M27. Ayrıca her modül kendi **Postman parçasını** (`postman/parts/<modul>.postman_collection.json`) teslim eder. Parça kendi kendine yeter: gereken odaları ve kullanıcıları kendisi oluşturur, seed kullanıcılarını silmez ve boş veritabanında tek başına yeşil çalışır. Bu, her görevin "bitti" ölçütüdür. Her kişi kendi modülünde katmanları, constructor injection'ı, entity kurallarını, EntityManager CRUD'unu, JPQL filtresini, `@Transactional`'ı ve beş HTTP metodunu uygular.
 
@@ -54,15 +49,15 @@ Aşama 3  D: G16a (README) + C: G16b (Postman) ◄── (G15 birleşti)
 
 **Kritik yol:** G1 → G2 → (G3 + G5 + G6) → G7 → G8 → G10 → G15 → G16a/G16b → G17. G12 ve G14 de G15'i besler ama B'nin G8 → G10 zinciri daha uzundur. Gecikmeler en çok bu zinciri etkiler. Bu yüzden:
 - G6 **ilk gün** birleşir.
-- G3, G5, G7 ve G8 PR'ları birleşir birleşmez, aynı gün incelenir.
-- B'nin yükünü azaltmak için B, G10'a G8 incelemedeyken başlar.
+- G3, G5, G7 ve G8 bittiği gün `main`'e push edilir ve ekibe haber verilir.
+- B, G8'i push eder etmez G10'a başlar.
 
 **Beklerken yapılabilecekler:**
 - **A** (G3 bitti, C'nin G5'ini bekliyor): G7'nin `DatabaseUserDetailsService` ve `SecurityConfig` kodunu yazmaya başlar. 401/403 işleyicileri G5 birleşince eklenir.
 - **B** (G4 bitti, G7'yi bekliyor): G8'in DTO'larını ve servisini yazar. Sahip kontrolü G7 birleşince test edilir.
 - **C** (G5 bitti): G11'i yapar, çünkü G11 yalnız G4'e bağlı.
 - **D** (G6 bitti): G13'ü yapar, çünkü yalnız G1'e bağlı. Ardından README iskeletini yazmaya başlar.
-- **A, C, D** (G8'i bekliyor): Kendi CRUD'larının DTO'larını, entity'lerini ve repository'lerini yazar. PR'ı G8 birleştikten sonra açar ve G8'in kalıbına uyar.
+- **A, C, D** (G8'i bekliyor): Kendi CRUD'larının DTO'larını, entity'lerini ve repository'lerini yazar. G8 `main`'e gelmeden push etmez ve G8'in kalıbına uyar.
 
 ## 4. Kişi A — Kullanıcılar ve güvenlik
 
@@ -114,7 +109,7 @@ Aşama 3  D: G16a (README) + C: G16b (Postman) ◄── (G15 birleşti)
 | 4 | **G15:** Oda silmede tek transaction'da çocuk kayıtları silme ve geri alma denemesi | G10, G12, G14 | M20'nin sunum kanıtı |
 
 ### Dikkat edilecekler
-- **G8 birleşmeden önce kalıbı ekiple paylaş:** Diğer üç kişi bu dosyaları açıp kopyalayacak. Kod temiz ve yorumlu olmalı. G8 PR'ı açılınca ekip kanalına "kalıp hazır" mesajı atılır.
+- **Kalıbı ekiple paylaş:** Diğer üç kişi bu dosyaları açıp kopyalayacak. Kod temiz ve yorumlu olmalı. G8 `main`'e push edilince ekip kanalına "kalıp hazır" mesajı atılır.
 - **POST'ta id:** Gövdede id gönderilmesi mevcut kaydı değiştirmemeli. Servis her zaman `new Room(...)` + `persist` kullanır, asla `merge` (M23).
 - **Oda sahibi:** Sahip gövdeden değil `Authentication.getName()`'den gelir.
 - **G15'te dokunma kuralı:** G15'te başkalarının metotları **çağrılır**, onların dosyalarına dokunulmaz. `StudySessionService.deleteByRoomId` C'nin, `InterviewSessionRepository.deleteByRoomId` D'nin.
@@ -205,8 +200,7 @@ Aşama 3  D: G16a (README) + C: G16b (Postman) ◄── (G15 birleşti)
 ## 8. Ortak kurallar (özet)
 
 Ayrıntı `CONTRIBUTING.md`'de.
-- **Dal ve commit:** Dal adı `feat/<harf>-<konu>`, ör. `feat/b-rooms`. Commit mesajları İngilizce (`feat(room): ...`).
-- **PR:** Her görev ayrı bir PR. Açıklamada karşılanan M maddeleri ve `scripts/checks/g<N>.sh` çıktısı yer alır. İnceleyici §2'deki tabloya göre atanır.
+- **Push:** Herkes doğrudan `main`'e push eder, PR yok. Önce `git pull --rebase`, `./mvnw -q package` ve `scripts/checks/g<N>.sh` PASS; `--force` yasak. Commit mesajları İngilizce (`feat(room): ...`), gövdede karşılanan M maddeleri.
 - **Dosya sahipliği:** Başkasının paketindeki dosya değiştirilmez. Gerekirse sahibinden istenir. En çok karışabilecek dosyalar ve sahipleri:
   - `SecurityConfig` → A
   - `GlobalExceptionHandler` → C

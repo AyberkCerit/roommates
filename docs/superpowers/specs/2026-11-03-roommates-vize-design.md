@@ -341,7 +341,7 @@ M1–M7 ve M15–M27 her modülün kendi kodunda karşılanır; herkesin sorumlu
 - Initializr ile proje (Boot 4.1.2, Java 25, `com.roommates`), §3'teki bağımlılıklar; `EntityManager` ve `@Transactional`'ın Spring Data olmadan çalıştığının doğrulanması.
 - `application.properties` (DB ortam değişkenleri, `ddl-auto=update`, `roommates.*` yer tutucuları), `.env.example`, `.gitignore` (`.env.local`, `target/`, IDE dosyaları).
 - Boş paket yapısı (§4.2), `AppConfig` (`Clock`), geçici "her şeye izin ver" `SecurityConfig` (A ilk PR'ında gerçeğiyle değiştirir).
-- `docs/sql/01-create-db-user.sql`, bu tasarım belgesi, `CONTRIBUTING.md` (dal adları, commit kuralı, PR kontrol listesi: `@Autowired` yok, Spring Data yok, controller'da repository yok).
+- `docs/sql/01-create-db-user.sql`, bu tasarım belgesi, `CONTRIBUTING.md` (commit ve push kuralı, push kontrol listesi: `@Autowired` yok, Spring Data yok, controller'da repository yok).
 
 **Aşama 1 — Ortak sözleşmeler (paralel, küçük PR'lar, herkesin işi buna dayanır; önce bunlar birleşir)**
 - **A:** `Role`, `User` entity'leri, `UserRepository` (`findById`, `findByUsername` B ve D tarafından kullanılır); ardından güvenlik (Basic, Argon2id, örnek kullanıcılar), çünkü herkes test ederken giriş yapmak zorunda.
@@ -391,7 +391,7 @@ M1–M7 ve M15–M27 her modülün kendi kodunda karşılanır; herkesin sorumlu
 - Uygulamayı yeniden başlatıp verilerin durduğunu gösterme (M15).
 
 ### 10.3 Çalışma kuralları
-- Dal adları: `feat/a-security`, `feat/b-rooms`, `feat/c-study`, `feat/d-interview` vb.; her iş kendi küçük PR'ı.
+- PR ve inceleme yok (ekip kararı, 2026-11-03): herkes kendi modülünü doğrudan `main`'e push eder.
 - Her PR'ı başka bir ekip üyesi onaylar; PR açıklamasında karşıladığı M maddeleri yazılır.
 - Başkasının paketindeki dosyaya dokunmak gerekiyorsa sahibine sorulur (en çok `SecurityConfig`, `GlobalExceptionHandler`, `RoomServiceImpl.delete`).
 - Commit mesajları İngilizce (`feat(room): add JPQL filter by type`).
