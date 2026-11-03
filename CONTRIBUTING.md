@@ -21,7 +21,7 @@ Bu belge ekip üyeleri ve yapay zekâ asistanları içindir. Asistanınıza [doc
 - [ ] `@Transactional` importu `org.springframework.transaction.annotation.Transactional`
 - [ ] Entity'de her alanda `@Column`
 - [ ] Karşılanan M maddeleri yazıldı
-- [ ] `scripts/check.sh` kontrolleri PR açıklamasına yapıştırıldı
+- [ ] `scripts/checks/g<N>.sh` çıktısı PR açıklamasına yapıştırıldı
 
 Yasaklı desen taraması (çıktı boş olmalı):
 
@@ -60,6 +60,8 @@ Her görevin kontrolleri `scripts/checks/g<N>.sh` dosyasına yazılır ve çalı
 ### Windows / Git Bash
 
 `scripts/user-id.sh` `mysql` istemcisini kullanır. MySQL'in `bin` klasörü `PATH`'te olmalıdır.
+
+- `.env.local` dosyasını LF satır sonlarıyla kaydedin (CRLF olursa parola sonuna görünmez `\r` eklenir).
 
 ## Kurulum
 
