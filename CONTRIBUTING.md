@@ -61,7 +61,8 @@ Her görevin kontrolleri `scripts/checks/g<N>.sh` dosyasına yazılır ve çalı
 
 `scripts/user-id.sh` `mysql` istemcisini kullanır. MySQL'in `bin` klasörü `PATH`'te olmalıdır.
 
-- `.env.local` dosyasını LF satır sonlarıyla kaydedin (CRLF olursa parola sonuna görünmez `\r` eklenir).
+- `scripts/` altındaki betikler `.env.local`'daki CRLF satır sonlarını kendileri temizler. Dosyayı başka bir araçla okutacaksanız LF ile kaydedin (CRLF olursa parola sonuna görünmez `\r` eklenir).
+- **IntelliJ ile çalıştırma:** IntelliJ `.env.local`'ı okumaz; parola boş kalır ve uygulama veritabanına bağlanamaz. Ya uygulamayı Git Bash'te `scripts/run-local.sh` ile başlatın ya da Run Configuration → *Environment variables* alanına `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` değerlerini girin (EnvFile eklentisiyle `.env.local` da gösterilebilir).
 
 ## Kurulum
 
