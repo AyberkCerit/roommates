@@ -2,7 +2,7 @@
 
 - **Tarih:** 2026-11-03
 - **Ders:** YZMSEC319 Sunucu Uygulama Geliştirme (Dr. Öğr. Üyesi Samet Tonyalı)
-- **Ekip:** 4 kişi (Kişi A–D; isimleri ekip kendisi eşleştirecek)
+- **Ekip:** 4 kişi (A Şevval, B Pınar, C Adem, D Ayberk)
 - **Kaynak belgeler:** `../../../../Proje_Teknik_Gereklilikler_Kontrol_Listesi.pdf` (vize değerlendirme kriterleri), `../../../../YZMSEC319 - Bologna.pdf` (dersin bütünü), `../../../../proje-onerisi.md` (proje önerisi), `../../../../w2g-analiz/RAPOR.md` (w2g davranış analizi)
 
 ---

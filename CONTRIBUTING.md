@@ -31,12 +31,12 @@ grep -rnE "@Autowired|JpaRepository|CrudRepository|PersistenceContext|jakarta.tr
 
 ## Paket sahipliği
 
-| Harf | Modül | Paketler | İnceleyen |
-|---|---|---|---|
-| A | Kullanıcılar ve güvenlik | `user/`, `common/security/` | C |
-| B | Odalar ve video kuyruğu | `room/`, `video/` | A |
-| C | Çalışma oturumları ve hata yönetimi | `study/`, `common/error/`, `postman/` (birleşik koleksiyon) | D |
-| D | Mülakat oturumları, yapılandırma, belgeleme | `interview/`, `common/config/OpenApiConfig`, `README.md` | B |
+| Harf | Kişi | Modül | Paketler | İnceleyen |
+|---|---|---|---|---|
+| A | Şevval | Kullanıcılar ve güvenlik | `user/`, `common/security/` | C (Adem) |
+| B | Pınar | Odalar ve video kuyruğu | `room/`, `video/` | A (Şevval) |
+| C | Adem | Çalışma oturumları ve hata yönetimi | `study/`, `common/error/`, `postman/` (birleşik koleksiyon) | D (Ayberk) |
+| D | Ayberk | Mülakat oturumları, yapılandırma, belgeleme | `interview/`, `common/config/OpenApiConfig`, `README.md` | B (Pınar) |
 
 ### Başkasının paketine dokunmadan önce sahibine sor
 

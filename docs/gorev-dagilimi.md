@@ -6,12 +6,12 @@ Bu belge kimin neyi yapacağını, neyi kimden beklediğini, neyi kime teslim et
 
 | Harf | Modül | Kişi |
 |---|---|---|
-| A | Kullanıcılar ve güvenlik | _(ekip yazacak)_ |
-| B | Odalar ve video kuyruğu | _(ekip yazacak)_ |
-| C | Çalışma oturumları ve hata yönetimi | _(ekip yazacak)_ |
-| D | Mülakat oturumları, yapılandırma ve belgeleme | _(ekip yazacak)_ |
+| A | Kullanıcılar ve güvenlik | Şevval (`sevvalkayaa3434-cell`) |
+| B | Odalar ve video kuyruğu | Pınar (`Pinarylmz`) |
+| C | Çalışma oturumları ve hata yönetimi | Adem (`ademcabuk`) |
+| D | Mülakat oturumları, yapılandırma ve belgeleme | Ayberk (`AyberkCerit`) |
 
-**Öneri:** Aşama 0'ı (iskelet) Ayberk kurduğu için B'yi de Ayberk alsın. B'nin oda CRUD'u (Görev 8) herkesin kopyalayacağı referans kalıp ve kritik yolun ortasında. İskeleti kuran kişinin yazması gecikmeyi azaltır.
+**Not:** B'nin oda CRUD'u (Görev 8) herkesin kopyalayacağı referans kalıp ve kritik yolun ortasında. Pınar takılırsa iskeleti kuran Ayberk'e sorsun.
 
 ## 2. Genel bakış
 
