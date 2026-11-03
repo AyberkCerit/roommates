@@ -77,7 +77,7 @@ HTTP  →  XController (@RestController)
          MySQL
 ```
 
-- Controller yalnız Service arayüzüne bağımlıdır. Service yalnız Repository arayüzlerine bağımlıdır; başka modülün kaydı gerekiyorsa o modülün **repository'sini** kullanır, servisini değil (constructor döngülerini önler). Tek istisna `RoomServiceImpl → StudySessionService.deleteByRoomId` (§5.3).
+- Controller yalnız Service arayüzüne bağımlıdır. Service yalnız Repository arayüzlerine bağımlıdır; başka modülün kaydı gerekiyorsa o modülün **repository'sini** kullanır, servisini değil (constructor döngülerini önler). İstisna yok.
 - Her bağımlılık `private final` alan + constructor parametresi. Tek constructor olduğu için `@Autowired` yazılmaz (M7). `EntityManager` de constructor'dan alınır.
 - `@Transactional` **her zaman** `org.springframework.transaction.annotation.Transactional` (M20); `jakarta.transaction.Transactional` kullanılmaz. Okuma metotları `@Transactional(readOnly = true)`.
 - İstisna: `DatabaseUserDetailsService` Spring Security'nin arayüzüdür ve `UserRepository`'yi doğrudan çağırır (kimlik doğrulama bir iş kuralı değil, altyapı). Sunumda bu tek cümleyle açıklanır.
@@ -175,7 +175,7 @@ Her kaynak için üç istek DTO'su ve bir cevap DTO'su (Java `record`):
 - **Çalışma oturumu durumu (bizim kararımız):** yalnız `PLANNED → RUNNING → FINISHED`; geri dönüş ve atlama 400. `RUNNING`'e geçişte `startedAt` sunucu saatiyle (`Clock`) yazılır, istemciden alınmaz. PUT ve PATCH aynı geçiş kuralına tabidir. Oturum `RUNNING` olunca `StudyTimerRegistry`'ye eklenir, `FINISHED` olunca veya oturum silinince (veritabanından silindikten sonra) çıkarılır. Bilinen sınır: silmeden sonra transaction geri alınırsa registry yeniden başlatmaya kadar eksik kalır; vize için kabul edildi.
 - **Çalışma oturumu:** Bağlı oda `type = STUDY` değilse 400.
 - **Mülakat oturumu:** Bağlı oda `type = INTERVIEW` değilse 400; `interviewerId == candidateId` ise 400; kullanıcılar yoksa 404.
-- **Oda silme (M20, transaction örneği):** `RoomServiceImpl.delete(id)` tek `@Transactional` metot içinde sırayla `VideoQueueItemRepository.deleteByRoomId`, `StudySessionService.deleteByRoomId` (önce repository'nin JPQL `DELETE`'ini çağırır, sonra silinen oturumları registry'den çıkarır), `InterviewSessionRepository.deleteByRoomId` (her JPQL `DELETE` parametreli, `setParameter`) ve en son `RoomRepository.delete` çağırır. Biri hata verirse hepsi geri alınır. Bu, sunumda "neden transaction" sorusunun cevabıdır.
+- **Oda silme (M20, transaction örneği):** `RoomServiceImpl.delete(id)` tek `@Transactional` metot içinde sırayla `VideoQueueItemRepository.deleteByRoomId` (parametreli JPQL `DELETE`, `setParameter`) ve `RoomRepository.delete` çağırır. Çalışma ve mülakat oturumlarını veritabanı siler: `StudySession.room` ve `InterviewSession.room` ilişkilerinde `@OnDelete(action = OnDeleteAction.CASCADE)` vardır. Böylece oda modülü başka modülleri çağırmaz ve ekip birbirini beklemez (2026-11-03 kararı). Biri hata verirse hepsi geri alınır. Bu, sunumda "neden transaction" sorusunun cevabıdır.
 - **Kullanıcı silme:** Kullanıcının odası veya oturumu varsa silme 409 döner (`ConflictException`); vize için cascade yapılmaz. Tespit yöntemi: servis `remove` + `flush` çağırır, foreign key ihlalini (`DataIntegrityViolationException` / `PersistenceException`) yakalayıp `ConflictException`'a çevirir. Böylece kullanıcı modülü diğer modüllerin tablolarını bilmek zorunda kalmaz.
 - **Kullanıcı DTO sözleşmesi (bizim kararımız):** roller **isimle** gönderilir (`["ROLE_EDITOR"]`), bilinmeyen rol 400. `UserCreateRequest`: username, password (8–72 karakter), email, displayName, roles (boş olamaz), enabled (gönderilmezse `true`). `UserUpdateRequest` (PUT): aynı alanların tümü, **parola dahil** zorunlu (tam güncelleme). `UserPatchRequest`: hepsi isteğe bağlı; parola gelirse encode edilir. Username değiştirilebilir; çakışırsa 409. Aynı email de 409 (servis kontrol eder, DB hatasına bırakılmaz).
 
@@ -336,20 +336,22 @@ M1–M7 ve M15–M27 her modülün kendi kodunda karşılanır; herkesin sorumlu
 
 ### 10.2 Aşamalar ve bağımlılıklar
 
-**Aşama 0 — İskelet (Ayberk + Claude, tek PR, diğerleri bunu bekler)**
-- GitHub deposu (`roommates`), 3 ekip üyesi davet, `main` korumalı (PR + 1 onay).
+**Aşama 0 — İskelet (Ayberk + Claude, diğerleri bunu bekler; tamamlandı)**
+- GitHub deposu (`roommates`), 3 ekip üyesi davet. PR yok, herkes doğrudan `main`'e push eder.
 - Initializr ile proje (Boot 4.1.2, Java 25, `com.roommates`), §3'teki bağımlılıklar; `EntityManager` ve `@Transactional`'ın Spring Data olmadan çalıştığının doğrulanması.
 - `application.properties` (DB ortam değişkenleri, `ddl-auto=update`, `roommates.*` yer tutucuları), `.env.example`, `.gitignore` (`.env.local`, `target/`, IDE dosyaları).
-- Boş paket yapısı (§4.2), `AppConfig` (`Clock`), geçici "her şeye izin ver" `SecurityConfig` (A ilk PR'ında gerçeğiyle değiştirir).
+- Boş paket yapısı (§4.2), `AppConfig` (`Clock`), geçici "her şeye izin ver" `SecurityConfig` (A Görev 7'de gerçeğiyle değiştirir).
 - `docs/sql/01-create-db-user.sql`, bu tasarım belgesi, `CONTRIBUTING.md` (commit ve push kuralı, push kontrol listesi: `@Autowired` yok, Spring Data yok, controller'da repository yok).
 
-**Aşama 1 — Ortak sözleşmeler (paralel, küçük PR'lar, herkesin işi buna dayanır; önce bunlar birleşir)**
+**Aşama 1 — Ortak temel (herkesin işi buna dayanır; Aşama 2 bunun bitmesini bekler).** İçindeki kısa zincir: G3, G5, G6 hemen; G4 G3'ten, G7 G3+G5+G6'dan, G8 G4+G5+G7'den sonra. Son tarih yok. Aşama 2'de kişiler birbirini beklemez (2026-11-03 ekip kararı).
 - **A:** `Role`, `User` entity'leri, `UserRepository` (`findById`, `findByUsername` B ve D tarafından kullanılır); ardından güvenlik (Basic, Argon2id, örnek kullanıcılar), çünkü herkes test ederken giriş yapmak zorunda.
-- **B:** `Room` entity'si + enum'lar, `RoomRepository` (`findById` C ve D tarafından kullanılır). **Referans CRUD kalıbı** (`Room` için controller → service → repository tam akışı) Aşama 2'nin ilk işidir; diğerleri bu dosyaları örnek alır.
+- **B:** `Room` entity'si + enum'lar, `RoomRepository` (`findById` C ve D tarafından kullanılır). **Referans CRUD kalıbı** (`/api/rooms`, Görev 8) Aşama 1'in son işidir; diğerleri bu dosyaları örnek alır ve kontrollerinde oda oluşturmak için kullanır.
 - **C:** `ErrorResponse`, üç özel exception, `GlobalExceptionHandler` (en azından 404/400/doğrulama). Bu birleşmeden kimse kendi exception'ını yazmaz.
 - **D:** `AppConfig` dışındaki ortak yapılandırma: `OpenApiConfig`, Actuator özellikleri (`info.app.*`).
 
-**Aşama 2 — Modüller (paralel)**
+**Kişi bazlı işlerin tam listesi**
+
+Aşağıdaki liste her kişinin tüm işini sayar. Aşama 1'e ait olanlar yukarıdaki zincirle önce yapılır: A 1–5 (Görev 3, 7), B 1–2 (Görev 4, 8), C 1 (Görev 5), D 4–5 (Görev 6). Geri kalanlar Aşama 2'dir ve sırasızdır: kişiler birbirini beklemez.
 
 *Kişi A — Kullanıcılar ve güvenlik*
 1. `SecurityConfig`: `SecurityFilterChain` (§7.2 matrisi, actuator ve swagger kuralları dahil), `httpBasic`, `STATELESS`, `csrf` kapalı.
@@ -365,7 +367,7 @@ M1–M7 ve M15–M27 her modülün kendi kodunda karşılanır; herkesin sorumlu
 2. POST'ta gövdedeki `id`'nin yok sayıldığını gösteren durum; PATCH'te id → 400 (referans uygulama; diğerleri kopyalar).
 3. `VideoQueueItem` entity'si; `/api/rooms/{roomId}/videos` tam CRUD (oda yoksa 404; video başka odaya aitse 404); `position` otomatik.
 4. `VideoQueueItemRepository.deleteByRoomId` (JPQL `DELETE` + `setParameter`).
-5. `RoomServiceImpl.delete`: §5.3'teki çok tablolu silme tek transaction'da (C ve D'nin `deleteByRoomId` metotlarını çağırır).
+5. `RoomServiceImpl.delete`: §5.3'teki çok tablolu silme tek transaction'da (videolar + oda; oturumları veritabanı siler).
 6. Postman: rooms + videos klasörleri, "POST'ta id gönderme" isteği.
 
 *Kişi C — Çalışma oturumları ve hata yönetimi*
@@ -373,13 +375,13 @@ M1–M7 ve M15–M27 her modülün kendi kodunda karşılanır; herkesin sorumlu
 2. `StudySession` entity'si; `/api/study-sessions` tam CRUD; `?roomId=&status=` JPQL filtresi; oda STUDY değilse 400; `focusMinutes` 1–180, `breakMinutes` 1–60, `rounds` 1–12.
 3. `@Value` ile varsayılan süreler (M12).
 4. `StudyTimerRegistry` (`@PostConstruct`/`@PreDestroy`, M10); oturum PATCH ile `status=RUNNING` yapılınca kaydedilir, `FINISHED` olunca çıkarılır.
-5. `StudySessionRepository.deleteByRoomId`.
+5. `StudySession.room` ilişkisinde `@OnDelete(action = OnDeleteAction.CASCADE)`.
 6. Postman: study-sessions klasörü + 400 senaryoları (eksik alan, bozuk JSON, yanlış enum, `/abc` id) ve 404 senaryoları.
 
 *Kişi D — Mülakat oturumları, yapılandırma ve belgeleme*
 1. `QuestionProvider` arayüzü, `TechnicalQuestionProvider` (`@Primary`), `BehavioralQuestionProvider` (`@Lazy`, `@Qualifier("behavioral")`), `InterviewConfig` (`@Configuration` + `@Bean`) (M8, M9, M11).
 2. `InterviewSession` entity'si; `/api/interview-sessions` tam CRUD; `?status=` JPQL filtresi; oda INTERVIEW değilse 400; interviewer = candidate ise 400; soru `category`'ye göre sağlayıcıdan.
-3. `InterviewSessionRepository.deleteByRoomId`.
+3. `InterviewSession.room` ilişkisinde `@OnDelete(action = OnDeleteAction.CASCADE)`.
 4. Actuator `health`/`info` (M13) ve A ile birlikte erişim kurallarının doğrulanması.
 5. `OpenApiConfig`; tüm controller'ların Swagger'da eksiksiz görünmesinin son kontrolü.
 6. `README.md` çalıştırma rehberi. (Postman koleksiyonunun birleştirilmesi iş yükü dengesi için C'ye verildi; her modül kendi kendine yeten Postman parçasını teslim eder.)
@@ -392,7 +394,7 @@ M1–M7 ve M15–M27 her modülün kendi kodunda karşılanır; herkesin sorumlu
 
 ### 10.3 Çalışma kuralları
 - PR ve inceleme yok (ekip kararı, 2026-11-03): herkes kendi modülünü doğrudan `main`'e push eder.
-- Her PR'ı başka bir ekip üyesi onaylar; PR açıklamasında karşıladığı M maddeleri yazılır.
+- Commit gövdesinde karşılanan M maddeleri yazılır.
 - Başkasının paketindeki dosyaya dokunmak gerekiyorsa sahibine sorulur (en çok `SecurityConfig`, `GlobalExceptionHandler`, `RoomServiceImpl.delete`).
 - Commit mesajları İngilizce (`feat(room): add JPQL filter by type`).
 

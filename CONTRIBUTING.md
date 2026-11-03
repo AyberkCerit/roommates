@@ -7,7 +7,7 @@ Bu belge ekip üyeleri ve yapay zekâ asistanları içindir. Asistanınıza [doc
 - Herkes doğrudan `main`'e push eder. PR ve onay yok; herkes kendi modülünden sorumludur.
 - Herkes yalnız kendi paketlerinde çalışır (aşağıdaki tablo). Başkasının dosyası gerekiyorsa sahibine sorulur.
 - Commit mesajları İngilizce, Conventional Commits: `feat(room): add JPQL filter by type`, `fix(security): return JSON 401`.
-- Belgelerde "birleşti" ya da "birleşmiş olmalı", görevin `main`'e push edilmiş olması demektir. Bağımlılıklar geçerlidir: ör. diğer CRUD'lar G8 `main`'e gelmeden push edilmez.
+- Belgelerde "birleşti" ya da "birleşmiş olmalı", görevin `main`'e push edilmiş olması demektir. Bekleme yalnız Aşama 1'de (ortak temel: G3–G8) var; G8 `main`'e gelince kimse kimseyi beklemez. Ayrıntı: `docs/gorev-dagilimi.md` §3.
 
 ### Push etmeden önce
 

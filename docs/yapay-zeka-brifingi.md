@@ -51,7 +51,7 @@ Belgeler ile kendi bilgin çelişirse **belgeler kazanır**. Belgeler bir konuda
 3. **Katmanlar:**
    - Controller (`@RestController`) yalnız servis **arayüzüne** bağlıdır. Controller'da repository ya da `EntityManager` olmaz.
    - Servis bir arayüz + `@Service` sınıfıdır; iş kuralları burada.
-   - Bir servis başka bir modülün kaydına ihtiyaç duyarsa o modülün **repository'sini** kullanır, servisini değil. Tek istisna `RoomServiceImpl → StudySessionService.deleteByRoomId`.
+   - Bir servis başka bir modülün kaydına ihtiyaç duyarsa o modülün **repository'sini** kullanır, servisini değil. İstisna yok.
 4. **Transaction:**
    - `@Transactional` yalnız `org.springframework.transaction.annotation.Transactional`. `jakarta.transaction.Transactional` kullanılmaz.
    - Servis metotlarına konur: okuyanlar `readOnly = true`, değiştirenler düz.
@@ -88,7 +88,7 @@ Belgeler ile kendi bilgin çelişirse **belgeler kazanır**. Belgeler bir konuda
 ### Nasıl çalışacaksın
 
 1. **Görevi bul:** Kullanıcın hangi görevde olduğunu söyleyecek. O görevi planda bul; **Bağımlılık**, **Dosyalar** ve **Arayüzler** bölümlerini oku. "Arayüzler" bölümündeki sınıf, metot adı ve imzaları **aynen** kullan. Başka ekip üyelerinin kodu bu adlara güveniyor.
-2. **Bağımlılığı kontrol et:** Görevin bağımlı olduğu görevler `main`'e birleşmemişse bunu kullanıcına söyle. Planda "beklerken yapılabilecekler" (`docs/gorev-dagilimi.md` §3) var, ona yönlendir.
+2. **Bağımlılığı kontrol et:** Bekleme yalnız Aşama 1'de (ortak temel: G3–G8) var. Görevin bağımlı olduğu görevler `main`'de değilse kullanıcına söyle; o arada kodu yazabilir, yalnız push'u bekler (`docs/gorev-dagilimi.md` §3). Aşama 2 görevleri başka kimseyi beklemez: plandaki "Bağımlılık" satırı Aşama 2'de yalnız Aşama 1'i ve kişinin kendi önceki görevlerini gösterir.
 3. **Kalıbı kopyala:** CRUD görevlerinde, Görev 8'de yazılan oda modülü (`room/` paketi) referans kalıptır. Dosya düzenini, PATCH kurallarını, `Location` başlığını ve Swagger anotasyonlarını oradan al.
 4. **Kontrolü önce yaz:** Plandaki kontrol bloğunu `scripts/checks/g<N>.sh` dosyasına koy. İlk satırı `source scripts/creds.sh` olsun. Önce çalıştırıp başarısız olduğunu gör, sonra kodu yaz, sonra `bash -e scripts/checks/g<N>.sh` ile hepsinin PASS olduğunu gör.
    - Uygulama `scripts/run-local.sh` ile başlatılır.
@@ -183,11 +183,9 @@ Asistan, sana bu akışın her adımını anlatabilecek hâle getirmeli.
 - **Video kuralları (G10):** Video yalnız WATCH odasına eklenir. Başka odanın videosu istenirse 404.
 - **Oda silme (G15):** Tek `@Transactional` metotta şu sırayla:
   1. `VideoQueueItemRepository.deleteByRoomId`
-  2. `StudySessionService.deleteByRoomId` (C'nin)
-  3. `InterviewSessionRepository.deleteByRoomId` (D'nin)
-  4. `RoomRepository.delete`
+  2. `RoomRepository.delete`
 
-  C ve D'nin dosyalarını değiştirme, yalnız metotlarını çağır. Geri alma denemesi plandaki gibi yapılır ve deneme satırı sonra silinir.
+  Çalışma ve mülakat oturumlarını veritabanı siler (C ve D `room` ilişkisine `@OnDelete(action = OnDeleteAction.CASCADE)` koyar). Bu yüzden G15 kimseyi beklemez. Geri alma denemesi plandaki gibi yapılır ve deneme satırı sonra silinir.
 
 **Sunumda anlatacakların:**
 - Bir `POST /api/rooms` isteğinin controller'dan veritabanına yolculuğu.
@@ -203,7 +201,8 @@ Asistan, sana bu akışın her adımını anlatabilecek hâle getirmeli.
 **Senin görevlerin:** Görev 5 → Görev 11 → Görev 12 → Görev 16b. Paketlerin: `common/error/`, `study/`, `postman/` (birleşik koleksiyon). Karşıladığın maddeler: M10, M12, M28–M30, M38. Sunumun açılışını da sen yapacaksın: proje tanıtımı, M1, M2, M15–M17.
 
 **Kritik ayrıntılar:**
-- **Herkes G5'i bekliyor:** Görev 5 kritik yolda; A'nın güvenlik işi buna bağlı. İlk iş bitir.
+- **G5 Aşama 1'de:** A'nın güvenlik işi (G7) Görev 5'i bekliyor. İlk iş bitir ve push et.
+- **`@OnDelete` (G11):** `StudySession.room` ilişkisinde `@OnDelete(action = OnDeleteAction.CASCADE)` olmalı; oda silinince oturumları veritabanı siler. `deleteByRoomId` gibi silme kodu yazma; tablo daha önce anotasyonsuz oluştuysa `DROP TABLE study_sessions;` yap.
 - **`GlobalExceptionHandler`:**
   - `extends ResponseEntityExceptionHandler`. `handleExceptionInternal` ezilerek Spring MVC'nin tüm standart hataları (400, 404, 405, 406, 415) bizim `ErrorResponse`'a çevrilir. `handleMethodArgumentNotValid` ezilerek `fieldErrors` doldurulur.
   - Kendi exception'larımız ile `DataIntegrityViolationException` (409) ve `Exception` (500, ayrıntı yalnız log'a) `@ExceptionHandler` ile yakalanır.
@@ -249,6 +248,8 @@ Asistan, sana bu akışın her adımını anlatabilecek hâle getirmeli.
   - `BehavioralQuestionProvider` → `@Lazy @Qualifier("behavioral")`
 - **`@Lazy` iki yerde:** `@Lazy` hem bean tanımında hem `InterviewSessionServiceImpl` constructor parametresinde (`@Qualifier("behavioral") @Lazy QuestionProvider`) olmalı. Yoksa bean açılışta oluşur ve M9 gösterilemez.
 - **`@Lazy` kanıtı:** `BehavioralQuestionProvider` constructor'ı `"Davranışsal soru bankası yüklendi"` log'unu yazar. Bu log uygulama açılışında görünmemeli, ilk BEHAVIORAL mülakatta görünmeli.
+- **`@OnDelete` (G14):** `InterviewSession.room` ilişkisinde `@OnDelete(action = OnDeleteAction.CASCADE)` olmalı; oda silinince mülakatları veritabanı siler. `interviewer`/`candidate` ilişkilerinde olmaz. Silme kodu yazma; tablo daha önce anotasyonsuz oluştuysa `DROP TABLE interview_sessions;` yap.
+- **Postman (G14):** Parça geçici kullanıcıları A'nın `POST /api/users`'ı (G9) ile oluşturur. G9 henüz yoksa kodu ve kontrolü beklemeden push et, parçanın kullanıcı adımlarını G9 gelince ekle.
 - **Mülakat kuralları (G14):** Oda INTERVIEW değilse 400. Mülakatçı ile aday aynıysa 400. Kullanıcı yoksa 404.
 - **Postman parçasında silme sırası:** Önce oturumlar (ya da oda), sonra geçici kullanıcılar silinir. Tersi foreign key yüzünden 409 verir.
 - **README (G16a):** Başlıklar plandaki sırayla. Örnek kullanıcı parolaları `application.properties`'teki seed varsayılanlarıyla aynı olmalı. Ayrıca `/v3/api-docs`'un tam 10 `/api` yolu listelediğini doğrula.

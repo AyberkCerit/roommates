@@ -15,23 +15,28 @@
 | Aşama | Kişi A (kullanıcı + güvenlik) | Kişi B (oda + video) | Kişi C (çalışma + hata) | Kişi D (mülakat + belgeleme) |
 |---|---|---|---|---|
 | 0 | — | — | — | — |
-| 1 | Görev 3, Görev 7 | Görev 4 | Görev 5 | Görev 6 |
-| 2 | Görev 9 | Görev 8, Görev 10, Görev 15 | Görev 11, Görev 12 | Görev 13, Görev 14 |
+| 1 (ortak temel) | Görev 3, Görev 7 | Görev 4, Görev 8 | Görev 5 | Görev 6 |
+| 2 (sırasız) | Görev 9 | Görev 10, Görev 15 | Görev 11, Görev 12 | Görev 13, Görev 14 |
 | 3 | Görev 17 | Görev 17 | Görev 16b (Postman), Görev 17 | Görev 16a (README), Görev 17 |
 
-Görev 1 ve Görev 2 Aşama 0'dır (Ayberk + Claude). Görevlerin bağımlılıkları her görevin **Bağımlılık** satırındadır. Özet:
-- G3, G5 ve G6 yalnız G2'ye bağlı. G6 ilk gün birleşir, çünkü G7'nin Actuator kontrolleri ona dayanıyor.
-- G4, G3'ün `User`'ına bağlı. G7; G3, G5 ve G6'ya bağlı.
-- Aşama 2'de G8 (oda CRUD) ilk birleşen olmalı, çünkü diğer CRUD'lar onun kalıbını kopyalar. G9, G10, G12 ve G14 ondan sonra `main`'e push edilir.
-- G11 yalnız G4'e, G13 yalnız G1'e bağlı. İkisi de Aşama 1 bitmeden yapılabilir.
-- G15 en son birleşen koddur: G10, G12 ve G14'e bağlı.
+Görev 1 ve Görev 2 Aşama 0'dır (Ayberk + Claude). Ekip son tarih koymaz; herkes kendi işini bitirdiğinde push eder.
+
+**Aşama 1 — ortak temel.** Herkesin kodu bu altı göreve dayanır: kullanıcı ve oda sınıfları, hata sınıfları, giriş ve `/api/rooms` (her modülün kontrolleri oda oluşturur). Aşama 1'in içinde kısa bir zincir var:
+- G3 (A), G5 (C) ve G6 (D) hemen başlar, birbirini beklemez.
+- G4 (B), G3'ün `User` sınıfı `main`'e gelince push edilir.
+- G7 (A), G3, G5 ve G6 `main`'e gelince push edilir.
+- G8 (B), G4, G5 ve G7 `main`'e gelince push edilir. G8 gelince Aşama 1 biter.
+
+**Aşama 2 — sıra yok.** Aşama 1 bittikten sonra kimse kimseyi beklemez. Her kişi Aşama 2 görevlerini istediği zaman yapar ve push eder. Bir kişinin kendi görevleri arasındaki sıra (ör. B'nin G10 → G15'i, C'nin G11 → G12'si) yalnız o kişiyi ilgilendirir. Aşama 1 sürerken Aşama 2 kodunu yazmaya başlamak serbest; test ve push Aşama 1 bitince yapılır. G11 (yalnız G4'e bağlı) ve G13 (hiçbir şeye bağlı değil) Aşama 1 bitmeden de push edilebilir.
+
+**Aşama 3.** README (G16a) her an yazılmaya başlanabilir. Postman birleştirme (G16b) parçalar geldikçe yapılır, son hâli bütün modüller `main`'e gelince. Prova (G17) hep birlikte.
 
 ```
-G1 → G2 → ┬ G3 (A) ─┬→ G4 (B) ─┬────────────────→ G8 (B) → ┬ G9 (A)
-          ├ G5 (C) ─┤          └→ G11 (C) ───────────────→ ├ G12 (C)
-          ├ G6 (D) ─┴→ G7 (A) ───────────────→ (G8'e) ┘    ├ G10 (B)
-          └ (G1'den) G13 (D) ──────────────────────────→  └ G14 (D)
-          G10 + G12 + G14 → G15 (B) → G16a (D) + G16b (C) → G17 (hepsi)
+Aşama 1:  G3 (A) ─┬→ G4 (B) ──────────┐
+          G5 (C) ─┤                   ├→ G8 (B)  ══ Aşama 1 biter
+          G6 (D) ─┴→ G7 (A) ──────────┘
+Aşama 2 (sırasız):  A: G9   B: G10 → G15   C: G11 → G12   D: G13 → G14
+Aşama 3:  G16a (D), G16b (C), G17 (hepsi)
 ```
 
 ## Genel kısıtlar
@@ -42,7 +47,7 @@ Bu kurallar her görevin gereksinimlerine örtük olarak dahildir:
 - **Spring Data yok.** `spring-boot-starter-data-jpa` eklenmez. `JpaRepository`, `CrudRepository`, `@EnableJpaRepositories` ve Spring Data REST yasak. JPA için `spring-boot-starter-jdbc` + `org.springframework.boot:spring-boot-hibernate` kullanılır.
 - **Yalnız constructor injection.** Sınıflarda `@Autowired`, setter injection, `@PersistenceContext` yok. Bağımlılıklar `private final` alanlarda tutulur. `EntityManager` de constructor'dan alınır.
 - `@Transactional` yalnız `org.springframework.transaction.annotation.Transactional`. Servis sınıfında verilir: değiştiren metotlarda düz, okuyanlarda `readOnly = true`. Repository'ler `@Transactional` taşımaz.
-- **Servisler arası bağımlılık kuralı:** Bir servis başka bir modülün **servisini değil repository'sini** kullanır. Örneğin oda yüklemek için `RoomRepository.findById(...).orElseThrow(() -> new ResourceNotFoundException("Oda", id))`. Tek istisna `RoomServiceImpl → StudySessionService.deleteByRoomId`. Bu kural constructor döngülerini önler.
+- **Servisler arası bağımlılık kuralı:** Bir servis başka bir modülün **servisini değil repository'sini** kullanır. Örneğin oda yüklemek için `RoomRepository.findById(...).orElseThrow(() -> new ResourceNotFoundException("Oda", id))`. Bu kural constructor döngülerini önler. İstisna yok.
 - **Entity kuralları:**
   - `@Entity`, `@Table(name = "...")`, her kalıcı alanda `@Column(name = "...")`, ilişkilerde `@JoinColumn(name = "...")`.
   - `protected` parametresiz constructor.
@@ -241,7 +246,7 @@ Bu adım dışarıya dönük olduğu için Ayberk'ten açık onay istenir:
 
 ---
 
-## Aşama 1 — Ortak temel (paralel)
+## Aşama 1 — Ortak temel (Aşama 2 bunun bitmesini bekler)
 
 ### Görev 3 (Kişi A): `User` ve `Role` entity'leri, repository'leri
 
@@ -296,7 +301,7 @@ git add src/main/java/com/roommates/user && git commit -m "feat(user): add User 
 - Oluştur (`src/main/java/com/roommates/room/` altında): `RoomType.java`, `RoomVisibility.java`, `Room.java`, `RoomRepository.java`, `RoomRepositoryImpl.java`
 
 **Arayüzler:**
-- Tüketir: `User` (Görev 3; sahip ilişkisi için). Görev 3 henüz birleşmediyse dal onun üzerine kurulur.
+- Tüketir: `User` (Görev 3; sahip ilişkisi için). Görev 3 `main`'e gelmeden bu görev push edilmez; o arada entity ve repository yazılabilir.
 - Üretir (enum'lar): `RoomType { WATCH, STUDY, INTERVIEW }`, `RoomVisibility { PUBLIC, PRIVATE }`.
 - Üretir (`Room`):
   - Alanlar: `Long id`, `String name` (100), `String description` (500, nullable), `RoomType type`, `RoomVisibility visibility`, `Integer maxMembers`, `Instant createdAt`, `Instant closesAt` (nullable), `User owner` (`owner_id`, nullable olamaz).
@@ -556,11 +561,9 @@ git add -A && git commit -m "feat(security): add HTTP Basic with Argon2id, DB-ba
 
 ---
 
-## Aşama 2 — Modüller
+### Görev 8 (Kişi B): Oda CRUD — referans uygulama (Aşama 1'in son görevi)
 
-### Görev 8 (Kişi B): Oda CRUD — referans uygulama
-
-**Bağımlılık:** Görev 4, 5 ve 7 birleşmiş olmalı. Bu görev `main`'e gelmeden diğer CRUD görevleri push edilmez. Kod yazmaya başlayabilirler, ama kalıbı bundan alırlar.
+**Bağımlılık:** Görev 4, 5 ve 7 `main`'de olmalı. Görev 8 gelince Aşama 1 biter ve herkes Aşama 2'ye geçer. Diğer CRUD'lar bu dosyaları kalıp olarak kullanır.
 
 **Dosyalar:**
 - Oluştur (`room/dto/` altında): `RoomCreateRequest.java`, `RoomUpdateRequest.java`, `RoomPatchRequest.java`, `RoomResponse.java`
@@ -653,6 +656,10 @@ Beklenen:
 ```bash
 git add -A && git commit -m "feat(room): add rooms CRUD as the reference layered implementation"
 ```
+
+## Aşama 2 — Modüller (sırasız)
+
+Bu aşamadaki görevler yalnız Aşama 1'e ve sahibinin kendi önceki görevlerine bağlıdır. Kişiler birbirini beklemez.
 
 ### Görev 9 (Kişi A): Kullanıcı CRUD
 
@@ -807,7 +814,7 @@ git add -A && git commit -m "feat(video): add per-room video queue CRUD with gap
 
 ### Görev 11 (Kişi C): Çalışma oturumu entity'si, repository'si ve `StudyTimerRegistry`
 
-**Bağımlılık:** Görev 4.
+**Bağımlılık:** Görev 4. Aşama 1'in geri kalanı bitmeden de push edilebilir.
 
 **Dosyalar:**
 - Oluştur (`study/` altında): `StudySessionStatus.java`, `StudySession.java`, `StudySessionRepository.java`, `StudySessionRepositoryImpl.java`, `StudyTimerRegistry.java`
@@ -819,11 +826,12 @@ git add -A && git commit -m "feat(video): add per-room video queue CRUD with gap
 - Üretir (`StudySession`):
   - Tablo `study_sessions`.
   - Alanlar: `title` (100), `focusMinutes`, `breakMinutes`, `rounds` (`Integer`), `status`, `startedAt` (nullable), `room` (`room_id`).
+  - `room` ilişkisinde `@OnDelete(action = OnDeleteAction.CASCADE)` (`org.hibernate.annotations`) bulunur: oda silinince oturumları veritabanı siler. Böylece B'nin oda silme işi bu modülü çağırmaz. Silme kodu (`deleteByRoomId`) yazılmaz; iş yalnız bu anotasyonla yapılır.
+  - `ddl-auto=update` var olan bir foreign key'i değiştirmez. `study_sessions` tablosu yerel veritabanında anotasyon olmadan oluştuysa `DROP TABLE study_sessions;` yapıp uygulamayı yeniden başlat.
   - Constructor: `StudySession(String title, Integer focusMinutes, Integer breakMinutes, Integer rounds, Room room)`. Başlangıç durumu `PLANNED`.
 - Üretir (`StudySessionRepository`):
   - Temel CRUD: `save`, `findById`, `findAll`, `update`, `delete`.
-  - Sorgular: `List<StudySession> findByFilter(Long roomId, StudySessionStatus status)`, `List<StudySession> findByStatus(StudySessionStatus status)`, `List<Long> findIdsByRoomId(Long roomId)`.
-  - Silme: `int deleteByRoomId(Long roomId)`.
+  - Sorgular: `List<StudySession> findByFilter(Long roomId, StudySessionStatus status)`, `List<StudySession> findByStatus(StudySessionStatus status)`.
 - Üretir (`StudyTimerRegistry`):
   - `@Component`, constructor `(StudySessionRepository repository)`.
   - Yaşam döngüsü: `@PostConstruct void init()`, `@PreDestroy void shutdown()`.
@@ -867,7 +875,7 @@ git add -A && git commit -m "feat(study): add StudySession entity, repository an
   - `StudySessionUpdateRequest`: aynı alanlar ve `@NotNull StudySessionStatus status`. Süreler burada `@NotNull`.
   - `StudySessionPatchRequest(Long id, …, StudySessionStatus status)`.
   - `StudySessionResponse(Long id, Long roomId, String title, Integer focusMinutes, Integer breakMinutes, Integer rounds, StudySessionStatus status, Instant startedAt, boolean timerActive)`.
-- Üretir (`StudySessionService`): `findAll(Long roomId, StudySessionStatus status)`, `findById(Long id)`, `create(StudySessionCreateRequest request)`, `update(Long id, StudySessionUpdateRequest request)`, `patch(Long id, StudySessionPatchRequest request)`, `void delete(Long id)` ve **`void deleteByRoomId(Long roomId)`** (Görev 15 kullanır).
+- Üretir (`StudySessionService`): `findAll(Long roomId, StudySessionStatus status)`, `findById(Long id)`, `create(StudySessionCreateRequest request)`, `update(Long id, StudySessionUpdateRequest request)`, `patch(Long id, StudySessionPatchRequest request)` ve `void delete(Long id)`.
 - `StudySessionServiceImpl` constructor'ı: `(StudySessionRepository repository, StudyTimerRegistry timerRegistry, RoomRepository roomRepository, Clock clock, @Value("${roommates.study.default-focus-minutes}") int defaultFocusMinutes, @Value("${roommates.study.default-break-minutes}") int defaultBreakMinutes)`.
 
 **Durum geçişi** (PUT ve PATCH aynı yardımcıyı kullanır):
@@ -876,8 +884,8 @@ git add -A && git commit -m "feat(study): add StudySession entity, repository an
 - `RUNNING → FINISHED` geçişinde `timerRegistry.unregister` çağrılır.
 
 **Diğer kurallar:**
-- `delete` ve `deleteByRoomId` önce veritabanından siler, sonra registry'den çıkarır. `deleteByRoomId` silmeden önce id'leri `findIdsByRoomId` ile alır.
-- **Bilinen sınır:** Transaction silmeden sonra geri alınırsa, registry'den çıkarılmış ama veritabanında duran bir `RUNNING` oturum kalabilir. Uygulama yeniden başlatılınca `init()` bunu düzeltir. Vize için kabul edildi.
+- `delete` önce veritabanından siler, sonra registry'den çıkarır.
+- **Bilinen sınır:** Oda silinince oturumları veritabanı siler (`ON DELETE CASCADE`), registry bunu görmez ve o odanın `RUNNING` oturumları registry'de kalır. Uygulama yeniden başlatılınca `init()` bunu düzeltir. Vize için kabul edildi. M10 gösteriminden (kapanışta "N zamanlayıcı kapatıldı" log'u) önce uygulamayı yeniden başlat ki sayı doğru çıksın.
 - Oda `STUDY` değilse 400 `"Çalışma oturumu yalnız çalışma odasında açılabilir"`.
 
 - [ ] **Adım 1: Kontrolleri hazırla**
@@ -898,6 +906,11 @@ scripts/check.sh 200 GET "/api/study-sessions?roomId=$S&status=RUNNING" "$V"
 scripts/check.sh 200 PUT /api/study-sessions/$T "$E" "{\"title\":\"Vize\",\"roomId\":$S,\"focusMinutes\":50,\"breakMinutes\":10,\"rounds\":2,\"status\":\"FINISHED\"}"
 scripts/check.sh 400 GET /api/study-sessions/abc "$V"
 scripts/check.sh 204 DELETE /api/study-sessions/$T "$A"
+# Oda silinince oturumu veritabanı siler (@OnDelete)
+scripts/check.sh 201 POST /api/study-sessions "$E" "{\"title\":\"Silinecek\",\"roomId\":$S,\"rounds\":1}"; T2=$(cat /tmp/rm-last-id)
+scripts/check.sh 204 DELETE /api/rooms/$S "$A"
+scripts/check.sh 404 GET /api/study-sessions/$T2 "$V"
+scripts/check.sh 204 DELETE /api/rooms/$W "$A"
 ```
 
 - [ ] **Adım 2: DTO'ları, servisi ve controller'ı yaz**
@@ -932,7 +945,7 @@ git add -A && git commit -m "feat(study): add study sessions CRUD with @Value de
 
 ### Görev 13 (Kişi D): Soru sağlayıcıları — `@Configuration`, `@Bean`, `@Lazy`, `@Primary`, `@Qualifier`
 
-**Bağımlılık:** Görev 1.
+**Bağımlılık:** Görev 1 (yani yok). Aşama 1 bitmeden de push edilebilir.
 
 **Dosyalar:**
 - Oluştur (`interview/` altında): `QuestionProvider.java`, `TechnicalQuestionProvider.java`, `BehavioralQuestionProvider.java`, `InterviewConfig.java`
@@ -979,10 +992,11 @@ git add -A && git commit -m "feat(interview): add primary and lazy qualified que
 - Üretir (`InterviewSession`):
   - Tablo `interview_sessions`.
   - Alanlar: `topic` (100), `category`, `question` (500), `status`, `scheduledAt`, `room` (`room_id`), `interviewer` (`interviewer_id`), `candidate` (`candidate_id`).
+  - `room` ilişkisinde `@OnDelete(action = OnDeleteAction.CASCADE)` (`org.hibernate.annotations`) bulunur: oda silinince mülakatları veritabanı siler. `interviewer` ve `candidate` ilişkilerinde bulunmaz (kullanıcı silme 409 kalır). Silme kodu (`deleteByRoomId`) yazılmaz.
+  - `ddl-auto=update` var olan bir foreign key'i değiştirmez. `interview_sessions` tablosu yerel veritabanında anotasyon olmadan oluştuysa `DROP TABLE interview_sessions;` yapıp uygulamayı yeniden başlat.
 - Üretir (`InterviewSessionRepository`):
   - Temel CRUD: `save`, `findById`, `findAll`, `update`, `delete`.
   - Filtre: `List<InterviewSession> findByStatus(InterviewStatus status)`. Null ise tümünü döndürür; JPQL `:status IS NULL OR …` kalıbıyla.
-  - Silme: `int deleteByRoomId(Long roomId)`.
 - Üretir (DTO'lar):
   - `InterviewSessionCreateRequest(@NotNull Long roomId, @NotNull Long interviewerId, @NotNull Long candidateId, @NotBlank @Size(max=100) String topic, @NotNull InterviewCategory category, @NotNull Instant scheduledAt)`. Soru ve durum sunucuda belirlenir.
   - `InterviewSessionUpdateRequest`: aynı alanlar, ayrıca `@NotBlank @Size(max=500) String question` ve `@NotNull InterviewStatus status`.
@@ -1015,12 +1029,19 @@ scripts/check.sh 400 PATCH /api/interview-sessions/$M "$E" '{"id":99}'
 scripts/check.sh 200 PUT /api/interview-sessions/$M "$E" "{\"roomId\":$I,\"interviewerId\":$U1,\"candidateId\":$U2,\"topic\":\"JPA\",\"category\":\"TECHNICAL\",\"question\":\"Lazy loading nedir?\",\"status\":\"COMPLETED\",\"scheduledAt\":\"2026-11-20T10:00:00Z\"}"
 scripts/check.sh 204 DELETE /api/interview-sessions/$M "$A"
 scripts/check.sh 204 DELETE /api/interview-sessions/$MB "$A"
+# Oda silinince mülakatı veritabanı siler (@OnDelete)
+scripts/check.sh 201 POST /api/interview-sessions "$E" "{\"roomId\":$I,\"interviewerId\":$U1,\"candidateId\":$U2,\"topic\":\"Silinecek\",\"category\":\"TECHNICAL\",\"scheduledAt\":\"2026-11-22T10:00:00Z\"}"; M3=$(cat /tmp/rm-last-id)
+scripts/check.sh 204 DELETE /api/rooms/$I "$A"
+scripts/check.sh 404 GET /api/interview-sessions/$M3 "$V"
+scripts/check.sh 204 DELETE /api/rooms/$S "$A"
 ```
 
 Postman parçasında kullanıcı id'leri `scripts/user-id.sh` ile alınmaz. Parça şu sırayla çalışır:
 1. Admin ile iki geçici kullanıcı oluşturur (`POST /api/users`, rastgele sonekli ad) ve id'lerini değişkenlere yazar.
 2. Mülakat isteklerinde bu id'leri kullanır.
-3. Sonunda **önce** oluşturduğu oturumları siler (ya da INTERVIEW odasını; Görev 15'ten sonra oda silme oturumları da siler), **sonra** kullanıcıları siler. Ters sırada kullanıcı silme foreign key yüzünden 409 verir.
+3. Sonunda **önce** oluşturduğu oturumları ya da INTERVIEW odasını siler (oda silinince oturumları veritabanı siler), **sonra** kullanıcıları siler. Ters sırada kullanıcı silme foreign key yüzünden 409 verir.
+
+Bu parça kullanıcı oluşturmak için A'nın `POST /api/users`'ını (Görev 9) kullanır. Görev 9 henüz `main`'de değilse kod ve `scripts/checks/g14.sh` (kullanıcı id'lerini `scripts/user-id.sh` ile alır) beklemeden push edilir; parçanın kullanıcı adımları Görev 9 gelince eklenir.
 
 - [ ] **Adım 2: Entity'yi, repository'yi, DTO'ları, servisi ve controller'ı yaz**
 
@@ -1045,21 +1066,19 @@ git add -A && git commit -m "feat(interview): add interview sessions CRUD using 
 
 ### Görev 15 (Kişi B): Oda silmede çok tablolu transaction
 
-**Bağımlılık:** Görev 10, 12 ve 14.
+**Bağımlılık:** Görev 10 (B'nin kendi görevi). Başka kimseyi beklemez.
 
 **Dosyalar:**
 - Değiştir: `src/main/java/com/roommates/room/RoomServiceImpl.java` (constructor ve `delete`)
 
 **Arayüzler:**
-- Tüketir: `VideoQueueItemRepository.deleteByRoomId` (Görev 10), `StudySessionService.deleteByRoomId` (Görev 12), `InterviewSessionRepository.deleteByRoomId` (Görev 14).
-- `RoomServiceImpl` constructor'ı genişler: `(RoomRepository, UserRepository, VideoQueueItemRepository, StudySessionService, InterviewSessionRepository, Clock)`.
+- Tüketir: `VideoQueueItemRepository.deleteByRoomId` (Görev 10).
+- `RoomServiceImpl` constructor'ı genişler: `(RoomRepository, UserRepository, VideoQueueItemRepository, Clock)`.
+- Çalışma ve mülakat oturumlarını bu görev silmez: C ve D, `room` ilişkilerine `@OnDelete(action = OnDeleteAction.CASCADE)` koyar, oda silinince veritabanı onları siler (Görev 11, Görev 14). Transaction iki tabloyu kapsar: `video_queue_items` ve `rooms`.
 
 - [ ] **Adım 1: Kontrolü hazırla (şu an 409 ya da 500)**
 
-Üç oda hazırlanır:
-- `R`: WATCH, 2 video.
-- `S`: STUDY, 1 çalışma oturumu.
-- `I`: INTERVIEW, 1 mülakat oturumu.
+WATCH tipinde bir `R` odası ve içinde 2 video hazırlanır.
 
 Ardından odalar silinir:
 
@@ -1069,17 +1088,17 @@ scripts/check.sh 404 GET /api/rooms/$R/videos "$V"
 mysql -u roommates -p roommates -e "SELECT COUNT(*) FROM video_queue_items WHERE room_id=$R"   # 0
 ```
 
-Odalar ve çocuk kayıtları Görev 10, 12 ve 14'teki gibi `check.sh` ile oluşturulur; id'ler `/tmp/rm-last-id`'den alınır.
+Oda ve videolar Görev 8 ve 10'daki gibi `check.sh` ile oluşturulur; id'ler `/tmp/rm-last-id`'den alınır.
 
-`S` ve `I` odaları için de aynısı yapılır; `study_sessions` ve `interview_sessions` sayıları 0 olmalı.
+Oturumlu odaların silinmesi C ve D'nin kendi kontrollerinde (Görev 12, Görev 14) doğrulanır; bu görev onları beklemez.
 
 - [ ] **Adım 2: `delete`'i tasarım §5.3'teki sırayla yaz**
 
-Yöntemin üstüne yorum yazılır: neden tek transaction ve sıranın neden önemli olduğu (önce çocuk kayıtlar, sonra oda; foreign key'ler).
+Sıra: önce `VideoQueueItemRepository.deleteByRoomId`, sonra `RoomRepository.delete`. Yöntemin üstüne yorum yazılır: neden tek transaction, sıranın neden önemli olduğu (önce çocuk kayıtlar, sonra oda; foreign key'ler) ve oturumların neden veritabanı tarafından silindiği.
 
 - [ ] **Adım 3: Geri alınmayı doğrula**
 
-`InterviewSessionRepository.deleteByRoomId` çağrısından hemen sonra geçici olarak `throw new IllegalStateException("test")` eklenir ve dolu bir WATCH odası silinmeye çalışılır.
+`VideoQueueItemRepository.deleteByRoomId` çağrısından hemen sonra geçici olarak `throw new IllegalStateException("test")` eklenir ve dolu bir WATCH odası silinmeye çalışılır.
 Beklenen:
 - 500 dönüyor.
 - `video_queue_items` sayısı **değişmemiş** (geri alındı).
@@ -1091,7 +1110,7 @@ Satır kaldırılır.
 Beklenen: Adım 1'deki kontroller PASS.
 
 ```bash
-git add -A && git commit -m "feat(room): delete room with its videos and sessions in a single transaction"
+git add -A && git commit -m "feat(room): delete room with its videos in a single transaction"
 ```
 
 ---
@@ -1100,7 +1119,7 @@ git add -A && git commit -m "feat(room): delete room with its videos and session
 
 ### Görev 16a (Kişi D): README çalıştırma rehberi
 
-**Bağımlılık:** Görev 15.
+**Bağımlılık:** Yok, her an başlanabilir. Adım 2'deki Swagger kontrolü dört modülün CRUD'u `main`'e gelince yapılır.
 
 **Dosyalar:**
 - Değiştir: `README.md`
@@ -1134,7 +1153,7 @@ git add README.md && git commit -m "docs: add run guide"
 
 ### Görev 16b (Kişi C): Tek Postman koleksiyonu
 
-**Bağımlılık:** Görev 15. Tüm `postman/parts/*.json` dosyaları birleşmiş olmalı.
+**Bağımlılık:** Parçalar geldikçe birleştirilir. Son hâli (ve `postman/parts/`'ın silinmesi) dört modülün parçası da `main`'e gelince yapılır.
 
 **Dosyalar:**
 - Oluştur: `postman/RoomMates.postman_collection.json`, `postman/RoomMates-local.postman_environment.json`

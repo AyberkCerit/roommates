@@ -11,7 +11,7 @@ Bu belge kimin neyi yapacağını, neyi kimden beklediğini, neyi kime teslim et
 | C | Çalışma oturumları ve hata yönetimi | Adem (`ademcabuk`) |
 | D | Mülakat oturumları, yapılandırma ve belgeleme | Ayberk (`AyberkCerit`) |
 
-**Not:** B'nin oda CRUD'u (Görev 8) herkesin kopyalayacağı referans kalıp ve kritik yolun ortasında. Pınar takılırsa iskeleti kuran Ayberk'e sorsun.
+**Not:** B'nin oda CRUD'u (Görev 8) herkesin kopyalayacağı referans kalıp ve Aşama 1'in son adımı; Aşama 2 onu bekler. Pınar takılırsa iskeleti kuran Ayberk'e sorsun.
 
 ## 2. Genel bakış
 
@@ -27,37 +27,40 @@ Bu belge kimin neyi yapacağını, neyi kimden beklediğini, neyi kime teslim et
 
 **Herkesin ortak sorumluluğu:** M1–M7 ve M15–M27. Ayrıca her modül kendi **Postman parçasını** (`postman/parts/<modul>.postman_collection.json`) teslim eder. Parça kendi kendine yeter: gereken odaları ve kullanıcıları kendisi oluşturur, seed kullanıcılarını silmez ve boş veritabanında tek başına yeşil çalışır. Bu, her görevin "bitti" ölçütüdür. Her kişi kendi modülünde katmanları, constructor injection'ı, entity kurallarını, EntityManager CRUD'unu, JPQL filtresini, `@Transactional`'ı ve beş HTTP metodunu uygular.
 
-## 3. Zaman çizelgesi ve bekleme noktaları
+## 3. Aşamalar ve bekleme noktaları
+
+Son tarih yok; herkes kendi işini bitirdiğinde push eder. Bekleme yalnız Aşama 1'de var.
 
 ```
-Aşama 0  Ayberk + Claude: G1 → G2 ──────────────────────────────────┐
-                                                                    ▼
-Aşama 1  A: G3 ─────────┬─→ B: G4                         (herkes başlar)
-         C: G5 ─────────┤
-         D: G6 ─────────┴─→ A: G7          (G3 + G5 + G6 birleşti)
-Aşama 2  B: G8 ◄──────────────────────── (G4 + G5 + G7 birleşti)
-         C: G11 ◄─────────────────────── (G4 birleşti; G8'i beklemez)
-         D: G13 ◄─────────────────────── (G1 yeter; erkenden yapılabilir)
-         A: G9 ◄──────────────────────── (G7 + G8 birleşti)
-         B: G10 ◄─────────────────────── (G8 birleşti)
-         C: G12 ◄─────────────────────── (G8 + G11 birleşti)
-         D: G14 ◄─────────────────────── (G8 + G13 birleşti)
-         B: G15 ◄─────────────────────── (G10 + G12 + G14 birleşti)
-Aşama 3  D: G16a (README) + C: G16b (Postman) ◄── (G15 birleşti)
-         Hepsi: G17
+Aşama 0  Ayberk + Claude: G1 → G2 (bitti)
+
+Aşama 1  (ortak temel)
+         A: G3 ─┬─→ B: G4 ─────────┐
+         C: G5 ─┤                  ├─→ B: G8   ══ Aşama 1 biter
+         D: G6 ─┴─→ A: G7 ─────────┘
+
+Aşama 2  (sırasız: herkes istediği zaman yapar ve push eder)
+         A: G9    B: G10 → G15    C: G11 → G12    D: G13 → G14
+
+Aşama 3  D: G16a (README)   C: G16b (Postman)   Hepsi: G17
 ```
 
-**Kritik yol:** G1 → G2 → (G3 + G5 + G6) → G7 → G8 → G10 → G15 → G16a/G16b → G17. G12 ve G14 de G15'i besler ama B'nin G8 → G10 zinciri daha uzundur. Gecikmeler en çok bu zinciri etkiler. Bu yüzden:
-- G6 **ilk gün** birleşir.
-- G3, G5, G7 ve G8 bittiği gün `main`'e push edilir ve ekibe haber verilir.
-- B, G8'i push eder etmez G10'a başlar.
+**Aşama 1 — ortak temel.** Herkesin kodu buna dayanır: kullanıcı ve oda sınıfları, hata sınıfları, giriş (örnek kullanıcılar) ve `/api/rooms` (herkesin kontrolleri oda oluşturur). İçindeki zincir:
+- **Hemen:** Şevval G3, Adem G5, Ayberk G6. Birbirlerini beklemezler.
+- **G3 gelince:** Pınar G4'ü push eder.
+- **G3, G5, G6 gelince:** Şevval G7'yi push eder.
+- **G4, G5, G7 gelince:** Pınar G8'i push eder. Bu, Aşama 1'in sonu.
 
-**Beklerken yapılabilecekler:**
-- **A** (G3 bitti, C'nin G5'ini bekliyor): G7'nin `DatabaseUserDetailsService` ve `SecurityConfig` kodunu yazmaya başlar. 401/403 işleyicileri G5 birleşince eklenir.
-- **B** (G4 bitti, G7'yi bekliyor): G8'in DTO'larını ve servisini yazar. Sahip kontrolü G7 birleşince test edilir.
-- **C** (G5 bitti): G11'i yapar, çünkü G11 yalnız G4'e bağlı.
-- **D** (G6 bitti): G13'ü yapar, çünkü yalnız G1'e bağlı. Ardından README iskeletini yazmaya başlar.
-- **A, C, D** (G8'i bekliyor): Kendi CRUD'larının DTO'larını, entity'lerini ve repository'lerini yazar. G8 `main`'e gelmeden push etmez ve G8'in kalıbına uyar.
+Aşama 1 görevi bitiren `main`'e push edip ekip kanalına yazar ("G5 main'de" gibi). Bekleyen kişi o arada kodunu yazar, yalnız push'u bekler.
+
+**Aşama 2 — sıra yok.** G8 `main`'e geldikten sonra kimse kimseyi beklemez. Her kişinin kendi görevleri arasındaki sıra (Pınar G10 → G15, Adem G11 → G12, Ayberk G13 → G14) yalnız o kişiyi ilgilendirir. Bunu sağlamak için:
+- Oda silmede (G15) çalışma ve mülakat oturumlarını veritabanı siler: Adem ve Ayberk `room` ilişkisine `@OnDelete(action = OnDeleteAction.CASCADE)` koyar. Pınar onların kodunu çağırmaz.
+- Aşama 1 bitmeden de yapılabilenler: G11 (yalnız G4'e bağlı) ve G13 (hiçbir şeye bağlı değil).
+- Tek küçük istisna Postman: Ayberk'in mülakat parçası geçici kullanıcıları Şevval'in `POST /api/users`'ı (G9) ile oluşturur. Kod ve kontrol G9'u beklemez; parçanın kullanıcı adımları G9 gelince eklenir.
+
+Tablolardaki "Bekler" sütunu Aşama 2'de yalnız Aşama 1'i ve kişinin kendi önceki görevlerini gösterir.
+
+**Aşama 3.** README (G16a) her an yazılmaya başlanabilir; Swagger kontrolü dört CRUD gelince yapılır. Postman birleştirme (G16b) parçalar geldikçe yapılır, son hâli dört modül de gelince. Prova (G17) hep birlikte.
 
 ## 4. Kişi A — Kullanıcılar ve güvenlik
 
@@ -106,13 +109,13 @@ Aşama 3  D: G16a (README) + C: G16b (Postman) ◄── (G15 birleşti)
 | 1 | **G4:** `Room` entity'si, `RoomType`, `RoomVisibility`; `RoomRepository` (JPQL filtreli, her metotta EntityManager yorumu) | G2 (G3'ün `User`'ı) | `RoomRepository.findById` (C ve D kullanır), `Room` entity'si (video, çalışma ve mülakat ilişkileri) |
 | 2 | **G8:** `/api/rooms` tam CRUD: DTO'lar, servis, controller, Swagger anotasyonları | G4, G5, G7 | **Referans kalıp:** DTO düzeni, PATCH kuralları, `Location` başlığı, Swagger `@ApiResponse` kalıbı. A, C ve D bunu kopyalar |
 | 3 | **G10:** `/api/rooms/{roomId}/videos` tam CRUD, boşluksuz sıra (`shiftPositions`) | G8 | `VideoQueueItemRepository.deleteByRoomId` |
-| 4 | **G15:** Oda silmede tek transaction'da çocuk kayıtları silme ve geri alma denemesi | G10, G12, G14 | M20'nin sunum kanıtı |
+| 4 | **G15:** Oda silmede tek transaction'da videoları ve odayı silme, geri alma denemesi (oturumları veritabanı siler) | G10 | M20'nin sunum kanıtı |
 
 ### Dikkat edilecekler
 - **Kalıbı ekiple paylaş:** Diğer üç kişi bu dosyaları açıp kopyalayacak. Kod temiz ve yorumlu olmalı. G8 `main`'e push edilince ekip kanalına "kalıp hazır" mesajı atılır.
 - **POST'ta id:** Gövdede id gönderilmesi mevcut kaydı değiştirmemeli. Servis her zaman `new Room(...)` + `persist` kullanır, asla `merge` (M23).
 - **Oda sahibi:** Sahip gövdeden değil `Authentication.getName()`'den gelir.
-- **G15'te dokunma kuralı:** G15'te başkalarının metotları **çağrılır**, onların dosyalarına dokunulmaz. `StudySessionService.deleteByRoomId` C'nin, `InterviewSessionRepository.deleteByRoomId` D'nin.
+- **G15 kimseyi beklemez:** Oda silinince çalışma ve mülakat oturumlarını veritabanı siler (C ve D'nin `@OnDelete(action = OnDeleteAction.CASCADE)` ilişkisi). G15 yalnız videoları ve odayı siler.
 
 ### Sunumda anlatacakları (~6 dk)
 1. Bir `POST /api/rooms` isteğinin kod içinde izlenmesi: `RoomController` → `RoomService`/`RoomServiceImpl` → `RoomRepository`/`RoomRepositoryImpl` → `persist` (M3–M6).
@@ -138,11 +141,11 @@ Aşama 3  D: G16a (README) + C: G16b (Postman) ◄── (G15 birleşti)
 |---|---|---|---|
 | 1 | **G5:** `ErrorResponse`, `FieldErrorItem`, 3 özel exception, `ErrorResponseWriter`, `GlobalExceptionHandler` (§6.3 tablosunun tamamı) | G2 | **Herkesin kullandığı** `ResourceNotFoundException`, `InvalidRequestException`, `ConflictException`; A'nın 401/403 için kullandığı `ErrorResponseWriter` |
 | 2 | **G11:** `StudySession` entity'si, `StudySessionStatus.canTransitionTo`, repository, `StudyTimerRegistry` (`@PostConstruct`/`@PreDestroy`) | G4 | — |
-| 3 | **G12:** `/api/study-sessions` tam CRUD; `@Value` varsayılanları; durum geçişi; zamanlayıcı kaydı | G8, G11 | `StudySessionService.deleteByRoomId` (B'nin G15'i kullanır); Postman "Hata senaryoları/400-404" |
-| 4 | **G16b:** `postman/parts/*` → tek koleksiyon + ortam dosyası; boş veritabanında Collection Runner iki kez yeşil | G15 | M38 teslimi |
+| 3 | **G12:** `/api/study-sessions` tam CRUD; `@Value` varsayılanları; durum geçişi; zamanlayıcı kaydı | G8, G11 | `StudySession.room` ilişkisinde `@OnDelete(action = OnDeleteAction.CASCADE)` (oda silinince oturumlar gider); Postman "Hata senaryoları/400-404" |
+| 4 | **G16b:** `postman/parts/*` → tek koleksiyon + ortam dosyası; boş veritabanında Collection Runner iki kez yeşil | parçalar geldikçe; son hâli dört modül gelince | M38 teslimi |
 
 ### Dikkat edilecekler
-- **G5 kritik yolda:** A'nın güvenlik işi G5'e bekliyor. G5 Aşama 1'in ilk günü bitmeli.
+- **G5 Aşama 1'de:** Şevval'in güvenlik işi (G7) G5'i bekliyor. Bitince hemen push et ve ekibe yaz.
 - **İsim çakışması:** Bizim `ErrorResponse` ile Spring'in `org.springframework.web.ErrorResponse`'u aynı adı taşıyor. `GlobalExceptionHandler`'da Spring'inki import edilmez.
 - **`@PostConstruct` sınırları:** Bu metotta transaction yok. Yalnız okuma yapılır, LAZY ilişkiye dokunulmaz.
 - **`@Value` parametre tipi:** `@Value` constructor parametresinde `int`. DTO'daki süre alanları ise `Integer` (null = varsayılanı kullan).
@@ -174,8 +177,8 @@ Aşama 3  D: G16a (README) + C: G16b (Postman) ◄── (G15 birleşti)
 |---|---|---|---|
 | 1 | **G6:** Actuator `health`/`info` özellikleri, `OpenApiConfig` (basicAuth şeması) | G2 | Swagger UI'da "Authorize"; `/actuator/info` |
 | 2 | **G13:** `QuestionProvider`, iki implementasyon, `InterviewConfig` (`@Bean`, `@Primary`, `@Lazy`, `@Qualifier`) | G1 | — |
-| 3 | **G14:** `/api/interview-sessions` tam CRUD; kategoriye göre soru seçimi | G8, G13 | `InterviewSessionRepository.deleteByRoomId` (B'nin G15'i kullanır) |
-| 4 | **G16a:** README çalıştırma rehberi; Swagger'da 10 yolun eksiksiz göründüğünün kontrolü | G15 | M37 teslimi, M36'nın son kontrolü |
+| 3 | **G14:** `/api/interview-sessions` tam CRUD; kategoriye göre soru seçimi | G8, G13 | `InterviewSession.room` ilişkisinde `@OnDelete(action = OnDeleteAction.CASCADE)` (oda silinince mülakatlar gider) |
+| 4 | **G16a:** README çalıştırma rehberi; Swagger'da 10 yolun eksiksiz göründüğünün kontrolü | yok (Swagger kontrolü dört CRUD gelince) | M37 teslimi, M36'nın son kontrolü |
 
 ### Dikkat edilecekler
 - **Tek tanım:** İki soru sağlayıcı **yalnız** `InterviewConfig`'te `@Bean`. Sınıflarda `@Component` yazılırsa bean iki kez tanımlanır ve uygulama açılmaz.
