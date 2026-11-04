@@ -1,0 +1,5 @@
+info:
+  app:
+    name: RoomMates
+    description: "@project.description@"
+    version: "@project.version@"
