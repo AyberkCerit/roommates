@@ -23,7 +23,7 @@ Bu belge kimin neyi yapacağını, neyi kimden beklediğini, neyi kime teslim et
 | Uç noktaları | `/api/users` | `/api/rooms`, `/api/rooms/{roomId}/videos` | `/api/study-sessions` | `/api/interview-sessions` |
 | Tahmini iş | ~14 saat | ~16 saat | ~14 saat | ~13 saat |
 
-**İnceleme yok:** Herkes kendi modülünü yapıp doğrudan `main`'e push eder; PR ve onay yok. Bu belgede "birleşti", görevin `main`'e push edildiği anlamına gelir. Push etmeden önce kendi `scripts/checks/g<N>.sh` kontrolünüz PASS olmalı (ayrıntı `CONTRIBUTING.md`).
+**İnceleme yok:** Herkes kendi modülünü yapıp doğrudan `main`'e push eder; PR ve onay yok. Bu belgede "birleşti", görevin `main`'e push edildiği anlamına gelir. Push etmeden önce `./mvnw -q package` geçmeli ve endpoint'leriniz Postman ya da Swagger'da denenmiş olmalı. `scripts/checks/g<N>.sh` betikleri isteğe bağlı (ayrıntı `CONTRIBUTING.md`).
 
 **Herkesin ortak sorumluluğu:** M1–M7 ve M15–M27. Ayrıca her modül kendi **Postman parçasını** (`postman/parts/<modul>.postman_collection.json`) teslim eder. Parça kendi kendine yeter: gereken odaları ve kullanıcıları kendisi oluşturur, seed kullanıcılarını silmez ve boş veritabanında tek başına yeşil çalışır. Bu, her görevin "bitti" ölçütüdür. Her kişi kendi modülünde katmanları, constructor injection'ı, entity kurallarını, EntityManager CRUD'unu, JPQL filtresini, `@Transactional`'ı ve beş HTTP metodunu uygular.
 
@@ -203,7 +203,7 @@ Tablolardaki "Bekler" sütunu Aşama 2'de yalnız Aşama 1'i ve kişinin kendi �
 ## 8. Ortak kurallar (özet)
 
 Ayrıntı `CONTRIBUTING.md`'de.
-- **Push:** Herkes doğrudan `main`'e push eder, PR yok. Önce `git pull --rebase`, `./mvnw -q package` ve `scripts/checks/g<N>.sh` PASS; `--force` yasak. Commit mesajları İngilizce (`feat(room): ...`), gövdede karşılanan M maddeleri.
+- **Push:** Herkes doğrudan `main`'e push eder, PR yok. Önce `git pull --rebase` ve `./mvnw -q package`; endpoint'ler Postman ya da Swagger'da denenmiş olmalı (`scripts/checks/g<N>.sh` isteğe bağlı); `--force` yasak. Commit mesajları İngilizce (`feat(room): ...`), gövdede karşılanan M maddeleri.
 - **Dosya sahipliği:** Başkasının paketindeki dosya değiştirilmez. Gerekirse sahibinden istenir. En çok karışabilecek dosyalar ve sahipleri:
   - `SecurityConfig` → A
   - `GlobalExceptionHandler` → C

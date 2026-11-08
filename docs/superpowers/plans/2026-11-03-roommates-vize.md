@@ -67,9 +67,9 @@ Bu kurallar her görevin gereksinimlerine örtük olarak dahildir:
 - **Hata mesajları:** Türkçe. 404 mesajı `"<Kaynak> bulunamadı: id=<id>"`. PATCH'te id mesajı tam olarak `"Birincil anahtar (id) PATCH ile değiştirilemez"`.
 - `spring.jpa.hibernate.ddl-auto=update`. `create` ve `create-drop` yasak.
 - **Commit mesajları** İngilizce Conventional Commits: `feat(room): ...`, `fix(security): ...`. PR ve inceleme yok: herkes kendi modülünü doğrudan `main`'e push eder (`git pull --rebase` önce, `--force` yasak). Commit gövdesinde karşılanan M maddeleri listelenir. "Birleşti" = `main`'e push edildi.
-- **Doğrulama yöntemi:** Vizede test kodu kapsam dışı (tasarım §2). Her görev, çalışan uygulamaya karşı `scripts/check.sh` ile bekleme kontrolleri yapar. Bu kontroller aynı zamanda Postman isteklerinin taslağıdır.
+- **Doğrulama yöntemi:** Vizede test kodu kapsam dışı (tasarım §2). Her görevin kontrol bloğu, çalışan uygulamaya karşı denenecek istekleri ve beklenen kodları listeler; aynı zamanda Postman isteklerinin taslağıdır. **Güncelleme (2026-11-09, ekip kararı):** `scripts/checks/g<N>.sh` betiği yazmak isteğe bağlı; kontroller Postman, Swagger ya da `scripts/check.sh` ile elle yapılabilir. Aşağıdaki kurallar betik yazanlar içindir.
 - **Kontrol kuralları:**
-  - Her görevin kontrol bloğu `scripts/checks/g<N>.sh` dosyasına kaydedilir ve `bash -e scripts/checks/g<N>.sh` ile çalıştırılır. `-e` sayesinde ilk FAIL'de durur; boş id ile devam edip zincirleme hata üretmez. Dosyalar repoya girer, Görev 17'de hepsi sırayla yeniden çalıştırılır.
+  - Her görevin kontrol bloğu `scripts/checks/g<N>.sh` dosyasına kaydedilir ve `bash -e scripts/checks/g<N>.sh` ile çalıştırılır. `-e` sayesinde ilk FAIL'de durur; boş id ile devam edip zincirleme hata üretmez. Yazılan dosyalar repoya girer, Görev 17'de var olanlar sırayla yeniden çalıştırılır.
   - Blok dosyasının ilk satırı `source scripts/creds.sh`. Bu, `$A`, `$E`, `$V`, `$P` (admin, editor, viewer, pasif) değişkenlerini kurar.
   - Geçici kullanıcı adları rastgele sonek taşır (`SFX=$RANDOM`, ör. `ayse$SFX`). Yarıda kalan bir çalıştırma, sonrakini 409 ile bozmaz.
   - Id'ler **asla elle yazılmaz**. `check.sh` yalnız PASS'te, cevaptaki ilk `"id"` değerini `/tmp/rm-last-id` dosyasına yazar; FAIL'de dosyayı boşaltır. Kontroller bunu `X=$(cat /tmp/rm-last-id)` ile alır. Tek istisna: isteğin controller'a hiç ulaşmadığı 401/403 kontrollerinde sabit `/1` yazılabilir (Görev 7).
@@ -221,7 +221,7 @@ git init -b main && git add -A && git commit -m "chore: scaffold Spring Boot 4.1
   - `@Transactional` importu doğru
   - Entity'de her alanda `@Column`
   - Karşılanan M maddeleri yazıldı
-  - `scripts/checks/g<N>.sh` tamamen PASS
+  - `./mvnw -q package` geçiyor, endpoint'ler Postman ya da Swagger'da denendi (`scripts/checks/g<N>.sh` isteğe bağlı)
 - Paket sahipliği tablosu (tasarım §10.1).
 - "Başkasının paketine dokunmadan önce sor" kuralı.
 
@@ -1199,7 +1199,7 @@ Entity dosyaları gözle kontrol edilir. Her entity'de şunlar olmalı (M16, M17
 README'yi yazmamış bir üye `DROP DATABASE roommates`, ardından README'deki adımları izleyerek kurar.
 Beklenen: Postman koleksiyonu baştan sona yeşil.
 
-Ardından tüm görev kontrolleri sırayla yeniden çalıştırılır:
+Ardından yazılmış görev kontrol betikleri (varsa) sırayla yeniden çalıştırılır:
 
 ```bash
 for f in scripts/checks/g*.sh; do echo "== $f"; bash -e "$f" || break; done

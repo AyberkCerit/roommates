@@ -26,7 +26,7 @@ git push
 - [ ] `@Transactional` importu `org.springframework.transaction.annotation.Transactional`
 - [ ] Entity'de her alanda `@Column`
 - [ ] Commit mesajında karşılanan M maddeleri yazıldı (ör. gövdede `M18, M19`)
-- [ ] Uygulama açılıyor ve `bash -e scripts/checks/g<N>.sh` tamamen PASS
+- [ ] Uygulama açılıyor ve endpoint'ler Postman ya da Swagger'da beklenen kodları dönüyor
 
 Yasaklı desen taraması (çıktı boş olmalı):
 
@@ -52,9 +52,9 @@ Sık paylaşılan dosyalar:
 - `RoomServiceImpl`: B
 - `application.properties`: iskelet; actuator/`info` ayarları için D
 
-## Kontrol betikleri
+## Kontrol betikleri (isteğe bağlı)
 
-Her görevin kontrolleri `scripts/checks/g<N>.sh` dosyasına yazılır ve çalışan uygulamaya karşı `bash -e scripts/checks/g<N>.sh` ile çalıştırılır (`-e`: ilk FAIL'de durur).
+`scripts/checks/g<N>.sh` betikleri zorunlu değil (ekip kararı, 2026-11-09): hoca bunlara bakmıyor, değerlendirilen şey çalışan kod, Swagger, README ve Postman koleksiyonu. Push öncesi `./mvnw -q package` geçmeli ve kendi endpoint'lerinizi Postman ya da Swagger'da denemiş olmalısınız. Plandaki kontrol blokları elle doğrulama ve Postman istekleri için örnek olarak duruyor. Betik yazmak isteyen aşağıdaki kurallara uyar ve `bash -e scripts/checks/g<N>.sh` ile çalıştırır (`-e`: ilk FAIL'de durur).
 
 - İlk satır `source scripts/creds.sh`; `$A`, `$E`, `$V`, `$P` (admin, editor, viewer, pasif) kurulur.
 - Geçici kullanıcı adlarına rastgele sonek ekleyin (`SFX=$RANDOM`, ör. `ayse$SFX`).

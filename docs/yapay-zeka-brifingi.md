@@ -90,7 +90,7 @@ Belgeler ile kendi bilgin çelişirse **belgeler kazanır**. Belgeler bir konuda
 1. **Görevi bul:** Kullanıcın hangi görevde olduğunu söyleyecek. O görevi planda bul; **Bağımlılık**, **Dosyalar** ve **Arayüzler** bölümlerini oku. "Arayüzler" bölümündeki sınıf, metot adı ve imzaları **aynen** kullan. Başka ekip üyelerinin kodu bu adlara güveniyor.
 2. **Bağımlılığı kontrol et:** Bekleme yalnız Aşama 1'de (ortak temel: G3–G8) var. Görevin bağımlı olduğu görevler `main`'de değilse kullanıcına söyle; o arada kodu yazabilir, yalnız push'u bekler (`docs/gorev-dagilimi.md` §3). Aşama 2 görevleri başka kimseyi beklemez: plandaki "Bağımlılık" satırı Aşama 2'de yalnız Aşama 1'i ve kişinin kendi önceki görevlerini gösterir.
 3. **Kalıbı kopyala:** CRUD görevlerinde, Görev 8'de yazılan oda modülü (`room/` paketi) referans kalıptır. Dosya düzenini, PATCH kurallarını, `Location` başlığını ve Swagger anotasyonlarını oradan al.
-4. **Kontrolü önce yaz:** Plandaki kontrol bloğunu `scripts/checks/g<N>.sh` dosyasına koy. İlk satırı `source scripts/creds.sh` olsun. Önce çalıştırıp başarısız olduğunu gör, sonra kodu yaz, sonra `bash -e scripts/checks/g<N>.sh` ile hepsinin PASS olduğunu gör.
+4. **Doğrula:** `scripts/checks/g<N>.sh` betiği yazmak zorunlu değil (ekip kararı, 2026-11-09); kullanıcın istemedikçe yazma. Plandaki kontrol bloğunu, kodu yazdıktan sonra çalışan uygulamada elle ya da Postman ile denenecek istekler listesi olarak kullan.
    - Uygulama `scripts/run-local.sh` ile başlatılır.
    - Id'leri asla elle yazma; `/tmp/rm-last-id` ve `scripts/user-id.sh` kullanılır.
    - Kontroller JSON alan sırasına dayanmaz: her alan ayrı `grep` ile aranır.
@@ -103,7 +103,7 @@ Belgeler ile kendi bilgin çelişirse **belgeler kazanır**. Belgeler bir konuda
 6. **Commit:**
    - Mesajlar **İngilizce** Conventional Commits: `feat(study): add study sessions CRUD`. Yeni dosyalar için `git add -A` kullan; `commit -am` yeni dosyaları almaz.
    - PR ve inceleme yok; doğrudan `main`'e push edilir. Commit gövdesinde karşılanan M maddeleri yazılır.
-   - Push'tan önce: `git pull --rebase`, `./mvnw -q package`, uygulama açıkken `bash -e scripts/checks/g<N>.sh` PASS. `git push --force` asla kullanılmaz.
+   - Push'tan önce: `git pull --rebase`, `./mvnw -q package`, endpoint'ler Postman ya da Swagger'da denenmiş. `git push --force` asla kullanılmaz.
    - Yalnız kullanıcının kendi paketlerindeki dosyalar değiştirilir.
 7. **Bitirmeden önce:** Görevin sonunda şu tarama boş dönmeli:
    ```bash
