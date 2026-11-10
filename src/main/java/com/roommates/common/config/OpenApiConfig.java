@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 import io.swagger.v3.oas.annotations.info.Info;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
-
 @OpenAPIDefinition(
     info=@Info(
         title = "RoomMates API",
@@ -26,5 +25,4 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
     scheme = "basic"
 )
 public class OpenApiConfig {
-    
 }

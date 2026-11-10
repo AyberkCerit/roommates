@@ -5,27 +5,14 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
-/**
- * ÖRNEK KULLANICILARI OLUŞTURAN BAŞLANGIÇ GÖREVİ
- *
- * ApplicationRunner: Uygulama tamamen açıldıktan sonra run() metodu bir kez çalışır.
- *
- * Parolalar application.properties dosyasından @Value ile gelir:
- *   roommates.seed.admin-password=Admin.2026!   ...
- *
- * Asıl işi UserService.seedDefaultUsers yapar. Kayıt yazma işi @Transactional
- * bir servis metodunda yapılmalı; bu sınıf sadece onu çağırır.
- */
 @Component
 public class UserSeeder implements ApplicationRunner {
-
     private final UserService kullaniciServisi;
     private final String adminParolasi;
     private final String editorParolasi;
     private final String viewerParolasi;
     private final String pasifParolasi;
 
-    // Constructor injection (M7) + @Value ile ayar dosyasından değer alma.
     public UserSeeder(UserService kullaniciServisi,
                       @Value("${roommates.seed.admin-password}") String adminParolasi,
                       @Value("${roommates.seed.editor-password}") String editorParolasi,

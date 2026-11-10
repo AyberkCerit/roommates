@@ -10,13 +10,6 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/**
- * KULLANICIYI TAMAMEN GÜNCELLEME İSTEĞİ (PUT /api/users/{id})  (M24)
- *
- * PUT = tam güncelleme: BÜTÜN alanlar gönderilmek zorunda, parola dahil.
- * Eksik alan varsa 400 döner.
- * Hangi kullanıcının güncelleneceğini sadece adresteki {id} belirler.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record UserUpdateRequest(
 
@@ -35,7 +28,7 @@ public record UserUpdateRequest(
         @NotEmpty
         Set<String> roles,
 
-        @NotNull                  // PUT'ta aktiflik bilgisi de zorunlu
+        @NotNull
         Boolean enabled
 ) {
 }

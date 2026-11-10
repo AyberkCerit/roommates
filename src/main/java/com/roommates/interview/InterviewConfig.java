@@ -5,21 +5,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Primary;
 
-@Configuration 
+@Configuration
 public class InterviewConfig {
     @Bean
     @Primary
     public QuestionProvider technicalQuestionProvider() {
-        
         return new TechnicalQuestionProvider();
-    }    
+    }
 
-    @Bean 
+    @Bean
     @Lazy
     @Qualifier("behavioral")
     public QuestionProvider behavioralQuestionProvider() {
-        
         return new BehavioralQuestionProvider();
-    
     }
 }

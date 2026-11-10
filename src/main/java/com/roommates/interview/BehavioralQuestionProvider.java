@@ -15,16 +15,13 @@ public class BehavioralQuestionProvider implements QuestionProvider {
             "Bir hata yaptığınızda nasıl bir yaklaşım sergilersiniz?"
         );
 
-    
     public BehavioralQuestionProvider() {
         log.info("Davranışsal soru bankası yüklendi");
     }
     @Override
     public String nextQuestion(String topic) {
-
         int randomIndex = ThreadLocalRandom.current().nextInt(QUESTIONS.size());
         String question = QUESTIONS.get(randomIndex);
         return topic + " bağlamında: " + question;
     }
 }
-    

@@ -12,21 +12,10 @@ import org.springframework.stereotype.Component;
 
 import com.roommates.common.error.ErrorResponseWriter;
 
-/**
- * 403 CEVABINI YAZAN SINIF (yetki yok)
- *
- * Ne zaman çalışır?
- *   Kullanıcı giriş yapmış ama bu işi yapmaya yetkisi yok.
- *   Örnek: viewer bir odayı silmeye çalışıyor.
- *
- * Cevabı ekibin ortak hata biçimiyle yazar (M30, M35).
- */
 @Component
 public class JsonAccessDeniedHandler implements AccessDeniedHandler {
-
     private final ErrorResponseWriter hataYazici;
 
-    // Constructor injection (M7)
     public JsonAccessDeniedHandler(ErrorResponseWriter hataYazici) {
         this.hataYazici = hataYazici;
     }

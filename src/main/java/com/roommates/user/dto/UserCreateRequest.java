@@ -9,24 +9,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
-/**
- * YENİ KULLANICI EKLEME İSTEĞİ (POST /api/users)
- *
- * Örnek JSON:
- *   {
- *     "username": "ayse",
- *     "password": "Parola.123",
- *     "email": "ayse@roommates.local",
- *     "displayName": "Ayşe",
- *     "roles": ["ROLE_VIEWER"],
- *     "enabled": true
- *   }
- *
- * "id" alanı YOK: numarayı veritabanı verir. İstemci id gönderse bile
- * @JsonIgnoreProperties(ignoreUnknown = true) sayesinde yok sayılır (M23).
- *
- * Alanların üstündeki kurallar (@NotBlank, @Size...) uyulmazsa 400 döner.
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record UserCreateRequest(
 
@@ -42,9 +24,9 @@ public record UserCreateRequest(
         @NotBlank @Size(max = 100)
         String displayName,
 
-        @NotEmpty                 // en az bir rol olmalı
+        @NotEmpty
         Set<String> roles,
 
-        Boolean enabled           // gönderilmezse (null) aktif kabul edilir
+        Boolean enabled
 ) {
 }
